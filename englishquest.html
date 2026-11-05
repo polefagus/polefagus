@@ -40,15 +40,15 @@ button:hover{background:#526bc0}
 </head>
 <body>
 <div class="card">
-<h1>ðŸŽ® ENGLISH QUEST</h1>
-<p>ÐŸÑ€Ð¾Ð²ÐµÑ€ÑŒ ÑÐ²Ð¾Ð¸ Ð·Ð½Ð°Ð½Ð¸Ñ Ð°Ð½Ð³Ð»Ð¸Ð¹ÑÐºÐ¾Ð³Ð¾ ÑÐ·Ñ‹ÐºÐ°!</p>
+<h1>🎮 ENGLISH QUEST</h1>
+<p>Проверь свои знания английского языка!</p>
 
 <div id="menu">
  <div class="modes">
-  <button onclick="start('all')">ðŸš€ Ð’ÑÐµ Ñ‚ÐµÐ¼Ñ‹</button>
-  <button onclick="start('present')">âš¡ Present Simple</button>
-  <button onclick="start('this')">ðŸ“¦ This / That</button>
-  <button onclick="start('poss')">ðŸ’¡ My / Your / His...</button>
+  <button onclick="start('all')">🚀 Все темы</button>
+  <button onclick="start('present')">⚡ Present Simple</button>
+  <button onclick="start('this')">📦 This / That</button>
+  <button onclick="start('poss')">💡 My / Your / His...</button>
  </div>
 </div>
 
@@ -58,46 +58,46 @@ button:hover{background:#526bc0}
  <p id="topic"></p>
  <div id="question"></div>
  <div class="answers" id="answers"></div>
- <div id="info">Ð’Ñ‹Ð±ÐµÑ€Ð¸ Ð¾Ñ‚Ð²ÐµÑ‚!</div>
- <p>â­ ÐžÑ‡ÐºÐ¸: <b id="score">0</b></p>
- <button id="next" onclick="next()" disabled>Ð¡Ð»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ð¹ Ð²Ð¾Ð¿Ñ€Ð¾Ñ â†’</button>
- <button onclick="home()" style="margin-top:10px;width:100%">Ð’ Ð¼ÐµÐ½ÑŽ</button>
+ <div id="info">Выбери ответ!</div>
+ <p>⭐ Очки: <b id="score">0</b></p>
+ <button id="next" onclick="next()" disabled>Следующий вопрос →</button>
+ <button onclick="home()" style="margin-top:10px;width:100%">В меню</button>
 </div>
 
 <div id="result">
- <h1>ðŸ† Ð˜Ð³Ñ€Ð° Ð¾ÐºÐ¾Ð½Ñ‡ÐµÐ½Ð°!</h1>
+ <h1>🏆 Игра окончена!</h1>
  <h2 id="points" style="text-align:center"></h2>
  <p id="message"></p>
- <button onclick="home()" style="width:100%">Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ ÑÐ½Ð¾Ð²Ð°</button>
+ <button onclick="home()" style="width:100%">Играть снова</button>
 </div>
 </div>
 
 <script>
 const data=[
-['present','Present Simple','I ___ a family.',['has','have','haves'],1,'Ð¡ I Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ have.'],
-['present','Present Simple','He ___ to school.',['go','goes','gos'],1,'Go Ð¿Ñ€ÐµÐ²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ÑÑ Ð² goes.'],
-['present','Present Simple','She ___ this mistake.',['see','sees','seeing'],1,'Ð¡ she Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ -s.'],
-['present','Present Simple','They often ___ to the cinema.',['go','goes','going'],0,'Ð¡ they Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ Ð¾Ð±Ñ‹Ñ‡Ð½Ñ‹Ð¹ Ð³Ð»Ð°Ð³Ð¾Ð».'],
-['present','Present Simple','He ___ this thing.',['know','knows','knowing'],1,'Ð¡ he Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ -s.'],
-['present','Present Simple','She ___ it very well.',['do','does','dos'],1,'Do Ð¿Ñ€ÐµÐ²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ÑÑ Ð² does.'],
-['present','Present Simple','It ___ interesting.',['look','looks','looking'],1,'Ð¡ it Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ -s.'],
-['present','Present Simple','He ___ an idea.',['have','has','haves'],1,'Have Ð¿Ñ€ÐµÐ²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ÑÑ Ð² has.'],
-['present','Present Simple','We ___ it often.',['do','does','doing'],0,'Ð¡ we Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ do.'],
-['present','Present Simple','He / She / It + Ð³Ð»Ð°Ð³Ð¾Ð»...',['-s','-ed','-ing'],0,'ÐžÐ±Ñ‹Ñ‡Ð½Ð¾ Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ -s Ð¸Ð»Ð¸ -es.'],
+['present','Present Simple','I ___ a family.',['has','have','haves'],1,'С I используется have.'],
+['present','Present Simple','He ___ to school.',['go','goes','gos'],1,'Go превращается в goes.'],
+['present','Present Simple','She ___ this mistake.',['see','sees','seeing'],1,'С she добавляем -s.'],
+['present','Present Simple','They often ___ to the cinema.',['go','goes','going'],0,'С they используется обычный глагол.'],
+['present','Present Simple','He ___ this thing.',['know','knows','knowing'],1,'С he добавляем -s.'],
+['present','Present Simple','She ___ it very well.',['do','does','dos'],1,'Do превращается в does.'],
+['present','Present Simple','It ___ interesting.',['look','looks','looking'],1,'С it добавляем -s.'],
+['present','Present Simple','He ___ an idea.',['have','has','haves'],1,'Have превращается в has.'],
+['present','Present Simple','We ___ it often.',['do','does','doing'],0,'С we используется do.'],
+['present','Present Simple','He / She / It + глагол...',['-s','-ed','-ing'],0,'Обычно добавляем -s или -es.'],
 
-['this','This / These','I see ___ mistake.',['this','these','those'],0,'This â€” Ð¾Ð´Ð¸Ð½ Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚ Ñ€ÑÐ´Ð¾Ð¼.'],
-['this','This / These','I see ___ mistakes.',['this','these','that'],1,'These â€” Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¾ Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð¾Ð² Ñ€ÑÐ´Ð¾Ð¼.'],
-['this','That / Those','I understand ___ person.',['those','that','these'],1,'That â€” Ð¾Ð´Ð¸Ð½ Ñ‡ÐµÐ»Ð¾Ð²ÐµÐº Ð´Ð°Ð»ÐµÐºÐ¾.'],
-['this','That / Those','I understand ___ people.',['that','those','this'],1,'Those â€” Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¾ Ð»ÑŽÐ´ÐµÐ¹ Ð´Ð°Ð»ÐµÐºÐ¾.'],
-['this','This / These','Ð§Ñ‚Ð¾ Ð¾Ð·Ð½Ð°Ñ‡Ð°ÐµÑ‚ These?',['Ð­Ñ‚Ð¾Ñ‚','Ð­Ñ‚Ð¸','Ð¢Ð¾Ñ‚'],1,'These Ð¾Ð·Ð½Ð°Ñ‡Ð°ÐµÑ‚ Â«ÑÑ‚Ð¸Â».'],
+['this','This / These','I see ___ mistake.',['this','these','those'],0,'This — один предмет рядом.'],
+['this','This / These','I see ___ mistakes.',['this','these','that'],1,'These — несколько предметов рядом.'],
+['this','That / Those','I understand ___ person.',['those','that','these'],1,'That — один человек далеко.'],
+['this','That / Those','I understand ___ people.',['that','those','this'],1,'Those — несколько людей далеко.'],
+['this','This / These','Что означает These?',['Этот','Эти','Тот'],1,'These означает «эти».'],
 
-['poss','Possessive words','I â†’ ___',['my','his','our'],0,'I â€” my.'],
-['poss','Possessive words','We â†’ ___',['your','our','their'],1,'We â€” our.'],
-['poss','Possessive words','You â†’ ___',['your','my','her'],0,'You â€” your.'],
-['poss','Possessive words','They â†’ ___',['their','his','our'],0,'They â€” their.'],
-['poss','Possessive words','He â†’ ___',['her','his','its'],1,'He â€” his.'],
-['poss','Possessive words','She â†’ ___',['his','her','their'],1,'She â€” her.'],
-['poss','Possessive words','It â†’ ___',['its','our','your'],0,'It â€” its.']
+['poss','Possessive words','I → ___',['my','his','our'],0,'I — my.'],
+['poss','Possessive words','We → ___',['your','our','their'],1,'We — our.'],
+['poss','Possessive words','You → ___',['your','my','her'],0,'You — your.'],
+['poss','Possessive words','They → ___',['their','his','our'],0,'They — their.'],
+['poss','Possessive words','He → ___',['her','his','its'],1,'He — his.'],
+['poss','Possessive words','She → ___',['his','her','their'],1,'She — her.'],
+['poss','Possessive words','It → ___',['its','our','your'],0,'It — its.']
 ];
 
 let questions=[],index=0,score=0,locked=false,mode='all';
@@ -118,15 +118,15 @@ function show(){
  locked=false;
  let q=questions[index];
  document.getElementById('counter').textContent=
- 'Ð’Ð¾Ð¿Ñ€Ð¾Ñ '+(index+1)+' Ð¸Ð· '+questions.length;
+ 'Вопрос '+(index+1)+' из '+questions.length;
  document.getElementById('progress').style.width=
  (index/questions.length*100)+'%';
  document.getElementById('topic').textContent=q[1];
  document.getElementById('question').textContent=q[2];
- document.getElementById('info').textContent='Ð’Ñ‹Ð±ÐµÑ€Ð¸ Ð¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾Ñ‚Ð²ÐµÑ‚!';
+ document.getElementById('info').textContent='Выбери правильный ответ!';
  let next=document.getElementById('next');
  next.disabled=true;
- next.textContent=index===questions.length-1?'Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚ ðŸ†':'Ð¡Ð»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ð¹ Ð²Ð¾Ð¿Ñ€Ð¾Ñ â†’';
+ next.textContent=index===questions.length-1?'Результат 🏆':'Следующий вопрос →';
 
  let box=document.getElementById('answers');
  box.innerHTML='';
@@ -152,10 +152,10 @@ function check(choice){
 
  if(choice===q[4]){
   score+=10;
-  document.getElementById('info').textContent='âœ… ÐŸÑ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ð¾! '+q[5];
+  document.getElementById('info').textContent='✅ Правильно! '+q[5];
  }else{
   document.getElementById('info').textContent=
-  'âŒ ÐŸÑ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾Ñ‚Ð²ÐµÑ‚: '+q[3][q[4]]+'. '+q[5];
+  '❌ Правильный ответ: '+q[3][q[4]]+'. '+q[5];
  }
  document.getElementById('score').textContent=score;
  document.getElementById('next').disabled=false;
@@ -173,10 +173,10 @@ function finish(){
  document.getElementById('result').style.display='block';
  document.getElementById('points').textContent=score+' / 100';
  document.getElementById('message').textContent=
- score===100?'ÐžÑ‚Ð»Ð¸Ñ‡Ð½Ð¾! Ð’ÑÐµ Ð¾Ñ‚Ð²ÐµÑ‚Ñ‹ Ð¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ðµ! ðŸŽ‰':
- score>=70?'ÐžÑ‡ÐµÐ½ÑŒ Ñ…Ð¾Ñ€Ð¾ÑˆÐ¾! ÐŸÑ€Ð¾Ð´Ð¾Ð»Ð¶Ð°Ð¹ Ñ‚Ñ€ÐµÐ½Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒÑÑ!':
- score>=40?'ÐÐµÐ¿Ð»Ð¾Ñ…Ð¾! ÐŸÐ¾Ð²Ñ‚Ð¾Ñ€Ð¸ Ð¿Ñ€Ð°Ð²Ð¸Ð»Ð° Ð¸ Ð¿Ð¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹ ÐµÑ‰Ñ‘ Ñ€Ð°Ð·.':
- 'ÐŸÐ¾Ð²Ñ‚Ð¾Ñ€Ð¸ ÑƒÑ€Ð¾Ðº Ð¸ Ð¿Ð¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹ ÑÐ½Ð¾Ð²Ð°! Ð¢Ñ‹ ÑÐ¼Ð¾Ð¶ÐµÑˆÑŒ!';
+ score===100?'Отлично! Все ответы правильные! 🎉':
+ score>=70?'Очень хорошо! Продолжай тренироваться!':
+ score>=40?'Неплохо! Повтори правила и попробуй ещё раз.':
+ 'Повтори урок и попробуй снова! Ты сможешь!';
 }
 
 function home(){
