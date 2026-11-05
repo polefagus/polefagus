@@ -1,0 +1,527 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Космическая битва</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#080b20;
+ color:white;
+ font-family:Arial,sans-serif;
+ text-align:center;
+}
+h1{color:#65eaff;text-shadow:0 0 15px #00cfff}
+#info{
+ display:flex;
+ justify-content:center;
+ gap:25px;
+ flex-wrap:wrap;
+ padding:12px;
+ font-size:18px;
+}
+canvas{
+ display:block;
+ width:min(96vw,800px);
+ height:auto;
+ margin:auto;
+ border:3px solid #4ceaff;
+ border-radius:12px;
+ background:#05091c;
+ touch-action:none;
+}
+button{
+ background:#164f83;
+ color:white;
+ border:2px solid #50dfff;
+ border-radius:9px;
+ padding:13px 18px;
+ margin:5px;
+ font-size:19px;
+ font-weight:bold;
+ cursor:pointer;
+ touch-action:none;
+}
+button:active{background:#087cb4}
+#message{color:#ffdd62;min-height:28px;padding:8px}
+</style>
+</head>
+<body>
+
+<h1>🚀 КОСМИЧЕСКАЯ БИТВА</h1>
+
+<div id="info">
+ ❤️ Жизни: <b id="hp">3</b>
+ ⭐ Очки: <b id="score">0</b>
+ 👾 Уровень: <b id="level">1</b>
+</div>
+
+<canvas id="game" width="800" height="600"></canvas>
+
+<div id="message">Уничтожай врагов и защищай галактику!</div>
+
+<div>
+ <button id="left">⬅️</button>
+ <button id="fire">🔥 ОГОНЬ</button>
+ <button id="right">➡️</button>
+</div>
+
+<div>
+ <button onclick="restart()">🔄 Начать заново</button>
+</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const W=800,H=600;
+
+let player,bullets,enemies,enemyBullets;
+let stars=[],particles=[];
+let hp,score,level,gameOver;
+let keys={};
+let fireCooldown=0;
+let enemyTimer=0;
+let boss=null;
+let bossTimer=0;
+
+function random(a,b){
+ return Math.random()*(b-a)+a;
+}
+
+function makeStars(){
+ stars=[];
+ for(let i=0;i<120;i++){
+  stars.push({
+   x:random(0,W),
+   y:random(0,H),
+   speed:random(.5,2),
+   size:random(1,3)
+  });
+ }
+}
+
+function restart(){
+ hp=3;
+ score=0;
+ level=1;
+ gameOver=false;
+
+ player={x:385,y:510,w:38,h:45,speed:6};
+
+ bullets=[];
+ enemies=[];
+ enemyBullets=[];
+ particles=[];
+
+ boss=null;
+ bossTimer=0;
+ enemyTimer=0;
+ fireCooldown=0;
+
+ makeStars();
+ updateInfo();
+ document.getElementById("message").textContent=
+ "Защити галактику!";
+}
+
+function updateInfo(){
+ document.getElementById("hp").textContent=hp;
+ document.getElementById("score").textContent=score;
+ document.getElementById("level").textContent=level;
+}
+
+function shoot(){
+ if(gameOver||fireCooldown>0)return;
+
+ bullets.push({
+  x:player.x+player.w/2-3,
+  y:player.y,
+  speed:9,
+  w:6,h:20
+ });
+
+ fireCooldown=12;
+}
+
+function createEnemy(){
+ enemies.push({
+  x:random(30,W-65),
+  y:-50,
+  w:38,h:35,
+  speed:random(1.5,2.7)+level*.25,
+  hp:1
+ });
+}
+
+function createBoss(){
+ boss={
+  x:300,y:55,
+  w:200,h:90,
+  hp:20+level*5,
+  maxHp:20+level*5,
+  direction:1,
+  shootTimer:0
+ };
+ document.getElementById("message").textContent=
+ "⚠️ ВНИМАНИЕ! ПОЯВИЛСЯ БОСС!";
+}
+
+function addExplosion(x,y){
+ for(let i=0;i<12;i++){
+  particles.push({
+   x,y,
+   vx:random(-3,3),
+   vy:random(-3,3),
+   life:25,
+   size:random(2,6)
+  });
+ }
+}
+
+function damage(){
+ hp--;
+ updateInfo();
+
+ if(hp<=0){
+  gameOver=true;
+  document.getElementById("message").textContent=
+   "💀 КОРАБЛЬ УНИЧТОЖЕН! Попробуй ещё раз.";
+ }else{
+  document.getElementById("message").textContent=
+   "Осторожно! Осталось жизней: "+hp;
+ }
+}
+
+function hit(a,b){
+ return a.x<b.x+b.w &&
+ a.x+a.w>b.x &&
+ a.y<b.y+b.h &&
+ a.y+a.h>b.y;
+}
+
+function update(){
+ if(gameOver)return;
+
+ // Звёзды
+ for(const s of stars){
+  s.y+=s.speed;
+  if(s.y>H){
+   s.y=0;
+   s.x=random(0,W);
+  }
+ }
+
+ // Управление
+ if(keys.left)player.x-=player.speed;
+ if(keys.right)player.x+=player.speed;
+
+ player.x=Math.max(0,Math.min(W-player.w,player.x));
+
+ // Стрельба
+ if(keys.fire)shoot();
+ if(fireCooldown>0)fireCooldown--;
+
+ // Пули игрока
+ for(let i=bullets.length-1;i>=0;i--){
+  const b=bullets[i];
+  b.y-=b.speed;
+
+  if(b.y<0){
+   bullets.splice(i,1);
+   continue;
+  }
+
+  let removed=false;
+
+  for(let j=enemies.length-1;j>=0;j--){
+   const e=enemies[j];
+
+   if(hit(b,e)){
+    enemies.splice(j,1);
+    bullets.splice(i,1);
+    score+=10;
+    addExplosion(e.x+e.w/2,e.y+e.h/2);
+    updateInfo();
+    removed=true;
+    break;
+   }
+  }
+
+  if(removed)continue;
+
+  if(boss&&hit(b,boss)){
+   boss.hp--;
+   bullets.splice(i,1);
+   addExplosion(b.x,b.y);
+
+   if(boss.hp<=0){
+    addExplosion(boss.x+100,boss.y+40);
+    boss=null;
+    score+=100;
+    level++;
+    updateInfo();
+    document.getElementById("message").textContent=
+     "🏆 БОСС ПОБЕЖДЁН! Новый уровень!";
+   }
+  }
+ }
+
+ // Создание врагов
+ enemyTimer++;
+ if(enemyTimer>Math.max(18,65-level*5)){
+  enemyTimer=0;
+  createEnemy();
+ }
+
+ // Движение врагов
+ for(let i=enemies.length-1;i>=0;i--){
+  const e=enemies[i];
+  e.y+=e.speed;
+
+  if(e.y>H){
+   enemies.splice(i,1);
+   continue;
+  }
+
+  if(hit(player,e)){
+   enemies.splice(i,1);
+   damage();
+   addExplosion(e.x,e.y);
+  }
+ }
+
+ // Босс появляется каждые 15 уничтоженных врагов
+ bossTimer++;
+ if(score>0&&score%150===0&&!boss&&bossTimer>100){
+  createBoss();
+  bossTimer=0;
+ }
+
+ // Босс
+ if(boss){
+  boss.x+=boss.direction*2.5;
+
+  if(boss.x<10||boss.x+boss.w>W-10){
+   boss.direction*=-1;
+  }
+
+  boss.shootTimer++;
+
+  if(boss.shootTimer>65){
+   boss.shootTimer=0;
+   enemyBullets.push({
+    x:boss.x+boss.w/2-5,
+    y:boss.y+boss.h,
+    w:10,h:20,
+    speed:5
+   });
+  }
+ }
+
+ // Вражеские пули
+ for(let i=enemyBullets.length-1;i>=0;i--){
+  const b=enemyBullets[i];
+  b.y+=b.speed;
+
+  if(b.y>H){
+   enemyBullets.splice(i,1);
+   continue;
+  }
+
+  if(hit(player,b)){
+   enemyBullets.splice(i,1);
+   damage();
+  }
+ }
+
+ // Взрывы
+ for(let i=particles.length-1;i>=0;i--){
+  const p=particles[i];
+  p.x+=p.vx;
+  p.y+=p.vy;
+  p.life--;
+
+  if(p.life<=0)particles.splice(i,1);
+ }
+}
+
+function drawPlayer(){
+ const x=player.x,y=player.y;
+
+ ctx.save();
+ ctx.shadowColor="#00eaff";
+ ctx.shadowBlur=20;
+
+ ctx.fillStyle="#28c9ff";
+ ctx.beginPath();
+ ctx.moveTo(x+19,y);
+ ctx.lineTo(x+38,y+43);
+ ctx.lineTo(x+19,y+34);
+ ctx.lineTo(x,y+43);
+ ctx.closePath();
+ ctx.fill();
+
+ ctx.fillStyle="#e9ffff";
+ ctx.beginPath();
+ ctx.ellipse(x+19,y+19,7,12,0,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.restore();
+
+ // Двигатель
+ ctx.fillStyle="#ff8c28";
+ ctx.fillRect(x+13,y+39,12,random(8,17));
+}
+
+function drawEnemy(e){
+ ctx.fillStyle="#e83c63";
+ ctx.beginPath();
+ ctx.moveTo(e.x+e.w/2,e.y+e.h);
+ ctx.lineTo(e.x,e.y+5);
+ ctx.lineTo(e.x+e.w,e.y+5);
+ ctx.closePath();
+ ctx.fill();
+
+ ctx.fillStyle="#fff";
+ ctx.fillRect(e.x+8,e.y+12,7,6);
+ ctx.fillRect(e.x+23,e.y+12,7,6);
+}
+
+function drawBoss(){
+ if(!boss)return;
+
+ ctx.fillStyle="#8e36b5";
+ ctx.beginPath();
+ ctx.moveTo(boss.x+100,boss.y+90);
+ ctx.lineTo(boss.x,boss.y+10);
+ ctx.lineTo(boss.x+35,boss.y);
+ ctx.lineTo(boss.x+165,boss.y);
+ ctx.lineTo(boss.x+200,boss.y+10);
+ ctx.closePath();
+ ctx.fill();
+
+ ctx.fillStyle="#ff3030";
+ ctx.fillRect(boss.x+45,boss.y+25,110,9);
+
+ ctx.fillStyle="#555";
+ ctx.fillRect(boss.x,boss.y-15,boss.w,9);
+
+ ctx.fillStyle="#43f27a";
+ ctx.fillRect(
+  boss.x,boss.y-15,
+  boss.w*Math.max(0,boss.hp/boss.maxHp),9
+ );
+}
+
+function draw(){
+ ctx.fillStyle="#05091c";
+ ctx.fillRect(0,0,W,H);
+
+ // Звёзды
+ ctx.fillStyle="white";
+ for(const s of stars){
+  ctx.fillRect(s.x,s.y,s.size,s.size);
+ }
+
+ // Пули игрока
+ ctx.fillStyle="#38ffff";
+ for(const b of bullets){
+  ctx.shadowColor="#00ffff";
+  ctx.shadowBlur=12;
+  ctx.fillRect(b.x,b.y,b.w,b.h);
+ }
+ ctx.shadowBlur=0;
+
+ // Враги
+ for(const e of enemies)drawEnemy(e);
+
+ // Пули врагов
+ ctx.fillStyle="#ff4444";
+ for(const b of enemyBullets){
+  ctx.fillRect(b.x,b.y,b.w,b.h);
+ }
+
+ drawBoss();
+
+ // Частицы
+ for(const p of particles){
+  ctx.globalAlpha=Math.max(0,p.life/25);
+  ctx.fillStyle="#ffbd3e";
+  ctx.fillRect(p.x,p.y,p.size,p.size);
+ }
+ ctx.globalAlpha=1;
+
+ drawPlayer();
+
+ if(gameOver){
+  ctx.fillStyle="rgba(0,0,0,.75)";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle="#ff5151";
+  ctx.font="bold 44px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("КОРАБЛЬ УНИЧТОЖЕН",W/2,260);
+
+  ctx.fillStyle="white";
+  ctx.font="24px Arial";
+  ctx.fillText("Нажми «Начать заново»",W/2,315);
+  ctx.textAlign="left";
+ }
+}
+
+function loop(){
+ update();
+ draw();
+ requestAnimationFrame(loop);
+}
+
+// Клавиатура
+document.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+
+ if(["arrowleft","arrowright"," "].includes(k)){
+  e.preventDefault();
+ }
+
+ if(k==="a"||k==="arrowleft")keys.left=true;
+ if(k==="d"||k==="arrowright")keys.right=true;
+ if(k===" "||k==="w"||k==="arrowup")keys.fire=true;
+});
+
+document.addEventListener("keyup",e=>{
+ const k=e.key.toLowerCase();
+
+ if(k==="a"||k==="arrowleft")keys.left=false;
+ if(k==="d"||k==="arrowright")keys.right=false;
+ if(k===" "||k==="w"||k==="arrowup")keys.fire=false;
+});
+
+// Кнопки для телефона
+function hold(id,key){
+ const b=document.getElementById(id);
+
+ b.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  keys[key]=true;
+  b.setPointerCapture(e.pointerId);
+ });
+
+ const release=()=>keys[key]=false;
+ b.addEventListener("pointerup",release);
+ b.addEventListener("pointercancel",release);
+ b.addEventListener("lostpointercapture",release);
+}
+
+hold("left","left");
+hold("right","right");
+hold("fire","fire");
+
+restart();
+loop();
+</script>
+</body>
+</html>
