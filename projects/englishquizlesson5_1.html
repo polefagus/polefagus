@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Quiz — Урок 5.1</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;padding:20px;
+ display:flex;align-items:center;justify-content:center;
+ font-family:Arial,sans-serif;color:white;
+ background:linear-gradient(135deg,#10172d,#263d75);
+}
+.container{
+ width:100%;max-width:750px;padding:28px;
+ background:#172440;border-radius:22px;
+ box-shadow:0 15px 50px #0006;
+}
+h1{text-align:center;font-size:32px}
+.subtitle{text-align:center;color:#b8c9ed}
+button{
+ border:0;border-radius:12px;padding:15px;
+ font-size:16px;font-weight:bold;cursor:pointer;
+}
+.start{width:100%;background:#6585ff;color:white;margin-top:15px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.answer{background:#293d66;color:white;min-height:65px}
+.answer:hover{background:#405b91}
+.correct{background:#16865d!important}
+.wrong{background:#b83e55!important}
+.question{
+ background:#263a62;padding:25px;border-radius:15px;
+ text-align:center;font-size:25px;margin-top:20px;
+ overflow-wrap:anywhere;
+}
+.info{display:flex;justify-content:space-between;color:#bdcbed}
+.hidden{display:none}
+#feedback{text-align:center;min-height:30px;margin-top:20px}
+.next{width:100%;background:#6585ff;color:white;margin-top:12px}
+@media(max-width:550px){
+ body{padding:10px;align-items:flex-start}
+ .container{padding:18px;margin-top:10px}
+ h1{font-size:26px}
+ .answers{grid-template-columns:1fr}
+ .question{font-size:21px}
+ button{font-size:15px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+ <h1>🎓 English Quiz</h1>
+ <p class="subtitle">Проверка знаний — Урок 5.1</p>
+
+ <section id="menu">
+  <h2>Выбери режим игры</h2>
+  <button class="start" onclick="start('en')">🇬🇧 Английский → Русский</button>
+  <button class="start" onclick="start('ru')">🇷🇺 Русский → Английский</button>
+  <button class="start" onclick="start('mix')">🎲 Смешанный режим</button>
+ </section>
+
+ <section id="game" class="hidden">
+  <div class="info">
+   <span id="number"></span>
+   <span id="points">Баллы: 0</span>
+  </div>
+  <div class="question" id="question"></div>
+  <div class="answers" id="answers"></div>
+  <div id="feedback"></div>
+  <button class="next" id="next" onclick="next()" disabled>Следующий вопрос</button>
+ </section>
+
+ <section id="result" class="hidden">
+  <h2 style="text-align:center">🏆 Игра окончена!</h2>
+  <div class="question" id="resultText"></div>
+  <button class="start" onclick="showMenu()">Играть снова</button>
+ </section>
+</div>
+
+<script>
+const lessons = [
+["I want it","Я хочу это"],
+["He has dollars","У него есть доллары"],
+["She really remembers it","Она действительно это помнит"],
+["This company has money","У этой компании есть деньги"],
+["She remembers it","Она это помнит"],
+["I see this mistake","Я вижу эту ошибку"],
+["I see these mistakes","Я вижу эти ошибки"],
+["My sister lives in this place","Моя сестра живёт в этом месте"],
+["Your lessons really help","Твои уроки действительно помогают"],
+["My friend thinks the same","Мой друг думает так же"],
+["He misses you","Он скучает по тебе"],
+["We live in Tajikistan","Мы живём в Таджикистане"],
+["I live in this city","Я живу в этом городе"],
+["He tries to help me","Он пытается мне помочь"],
+["I go to work","Я иду на работу"],
+["We often do it","Мы часто это делаем"],
+["She lives in that city","Она живёт в том городе"],
+["They go to school","Они ходят в школу"],
+["We think so","Мы так думаем"],
+["She feels happy","Она чувствует себя счастливой"],
+["I see it","Я вижу это"],
+["I have an idea","У меня есть идея"],
+["You know it","Ты знаешь это"],
+["She speaks English very well","Она очень хорошо говорит по-английски"],
+["My sister studies there","Моя сестра учится там"],
+["We live here","Мы живём здесь"],
+["It looks strange","Это выглядит странно"],
+["I see its success","Я вижу его успех"],
+["You speak English very well","Ты очень хорошо говоришь по-английски"],
+["We live in this country","Мы живём в этой стране"],
+["You help me","Ты помогаешь мне"],
+["They sometimes play computer games","Они иногда играют в компьютерные игры"],
+["I understand that person","Я понимаю того человека"],
+["Their offer seems really strange","Их предложение кажется действительно странным"],
+["He teaches English","Он преподаёт английский"],
+["This offer looks interesting","Это предложение выглядит интересным"],
+["He reads in English","Он читает на английском"],
+["I know it very well","Я очень хорошо это знаю"],
+["She tries to understand it","Она пытается понять это"]
+];
+
+let questions=[],index=0,score=0,mode='mix',locked=false;
+
+function shuffle(arr){
+ return [...arr].sort(()=>Math.random()-.5);
+}
+
+function start(m){
+ mode=m;
+ questions=shuffle(lessons);
+ index=0;
+ score=0;
+ document.getElementById('menu').classList.add('hidden');
+ document.getElementById('result').classList.add('hidden');
+ document.getElementById('game').classList.remove('hidden');
+ render();
+}
+
+function render(){
+ locked=false;
+ let item=questions[index];
+ let reverse=mode==='ru'||(mode==='mix'&&Math.random()<.5);
+ let correct=reverse?item[0]:item[1];
+ let prompt=reverse?item[1]:item[0];
+
+ document.getElementById('number').textContent=
+ 'Вопрос '+(index+1)+' / '+questions.length;
+ document.getElementById('points').textContent='Баллы: '+score;
+ document.getElementById('question').textContent=prompt;
+ document.getElementById('feedback').textContent='';
+ document.getElementById('next').disabled=true;
+
+ let options=shuffle([
+  correct,
+  ...shuffle(lessons.filter(x=>x!==item))
+   .slice(0,3).map(x=>reverse?x[0]:x[1])
+ ]);
+
+ let area=document.getElementById('answers');
+ area.innerHTML='';
+
+ options.forEach(option=>{
+  let button=document.createElement('button');
+  button.className='answer';
+  button.textContent=option;
+  button.onclick=()=>check(button,option,correct);
+  area.appendChild(button);
+ });
+}
+
+function check(button,answer,correct){
+ if(locked)return;
+ locked=true;
+
+ let buttons=document.querySelectorAll('.answer');
+ buttons.forEach(b=>{
+  b.disabled=true;
+  if(b.textContent===correct)b.classList.add('correct');
+ });
+
+ if(answer===correct){
+  score+=10;
+  document.getElementById('feedback').textContent='✅ Правильно! +10 баллов';
+ }else{
+  button.classList.add('wrong');
+  document.getElementById('feedback').textContent=
+   '❌ Правильный ответ: '+correct;
+ }
+
+ document.getElementById('points').textContent='Баллы: '+score;
+ document.getElementById('next').disabled=false;
+}
+
+function next(){
+ if(!locked)return;
+ index++;
+ if(index>=questions.length){
+  finish();
+ }else{
+  render();
+ }
+}
+
+function finish(){
+ document.getElementById('game').classList.add('hidden');
+ document.getElementById('result').classList.remove('hidden');
+ document.getElementById('resultText').textContent=
+ 'Правильных ответов: '+(score/10)+' из '+questions.length+
+ '. Твои баллы: '+score;
+}
+
+function showMenu(){
+ document.getElementById('result').classList.add('hidden');
+ document.getElementById('menu').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
