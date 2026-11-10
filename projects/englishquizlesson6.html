@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Word Catcher - Lesson 6</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #6a3093 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    user-select: none;
+  }
+  #game {
+    width: 100%;
+    max-width: 700px;
+    height: 100vh;
+    max-height: 900px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    z-index: 10;
+    background: rgba(0,0,0,0.2);
+  }
+  #hud .item { display: flex; align-items: center; gap: 6px; }
+  #lives { letter-spacing: 2px; font-size: 18px; }
+  #prompt {
+    text-align: center;
+    color: #fff;
+    padding: 8px 16px 12px;
+    font-size: 14px;
+    opacity: 0.9;
+    z-index: 10;
+  }
+  #target {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffe66d;
+    text-shadow: 0 0 20px rgba(255,230,109,0.8), 0 3px 0 #b8860b;
+    margin-top: 4px;
+    word-break: break-word;
+    line-height: 1.2;
+    padding: 0 8px;
+  }
+  #modeBadge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    margin-bottom: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  #playfield {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  .bubble {
+    position: absolute;
+    padding: 10px 16px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.95);
+    color: #1e3c72;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+    border: 3px solid rgba(255,255,255,0.6);
+    animation: popIn 0.3s ease-out;
+    touch-action: manipulation;
+    max-width: 92%;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .bubble:active { transform: scale(0.92); }
+  .bubble.correct { background: #2ecc71; color: #fff; animation: correctAnim 0.5s forwards; }
+  .bubble.wrong { background: #e74c3c; color: #fff; animation: wrongAnim 0.5s forwards; }
+  @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes correctAnim { to { transform: scale(1.4); opacity: 0; } }
+  @keyframes wrongAnim {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+    100% { transform: scale(0.5); opacity: 0; }
+  }
+  #speakerBtn {
+    display: block;
+    margin: 0 auto 6px;
+    background: linear-gradient(135deg, #ffd700, #ff9500);
+    border: none;
+    color: #1e3c72;
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,149,0,0.6);
+    transition: transform 0.15s;
+  }
+  #speakerBtn:active { transform: scale(0.9); }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,15,40,0.96);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    z-index: 100;
+    text-align: center;
+    padding: 24px;
+    backdrop-filter: blur(5px);
+    overflow-y: auto;
+  }
+  #overlay.show { display: flex; }
+  #overlay h1 { font-size: 34px; margin-bottom: 10px; background: linear-gradient(90deg,#ffe66d,#ff6b6b); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  #overlay p { font-size: 16px; margin-bottom: 10px; opacity: 0.85; line-height: 1.4; }
+  #overlay .score-big { font-size: 52px; color: #ffe66d; font-weight: bold; margin: 10px 0; text-shadow: 0 0 30px rgba(255,230,109,0.6); }
+  #overlay button {
+    margin-top: 14px;
+    padding: 13px 36px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #6a3093, #a044ff);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(160,68,255,0.6);
+    transition: transform 0.15s;
+  }
+  #overlay button:active { transform: scale(0.95); }
+  #modeSelect { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; margin-top: 10px; }
+  #modeSelect button {
+    margin-top: 0;
+    padding: 16px 20px;
+    font-size: 17px;
+    width: 100%;
+    background: linear-gradient(135deg, #2a5298, #6a3093);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  #modeSelect button .sub { font-size: 12px; opacity: 0.75; font-weight: 400; }
+  #modeSelect button.words { background: linear-gradient(135deg, #11998e, #38ef7d); color:#0a2a1a; }
+  #modeSelect button.sents { background: linear-gradient(135deg, #2193b0, #6dd5ed); color:#0a2230; }
+  #modeSelect button.mix   { background: linear-gradient(135deg, #8e2de2, #ff6b6b); }
+  .float-text {
+    position: absolute;
+    font-size: 36px;
+    font-weight: bold;
+    pointer-events: none;
+    animation: floatUp 0.8s forwards;
+    z-index: 50;
+  }
+  @keyframes floatUp { to { transform: translateY(-80px); opacity: 0; } }
+  #combo {
+    position: absolute;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffe66d;
+    text-shadow: 0 0 15px #ff9500;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #combo.show { opacity: 1; }
+  #backBtn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 30;
+    display: none;
+  }
+  #backBtn.show { display: block; }
+</style>
+</head>
+<body>
+<div id="game">
+  <button id="backBtn" title="В меню">←</button>
+  <div id="hud">
+    <div class="item">⭐ <span id="score">0</span></div>
+    <div class="item" id="lives">❤️❤️❤️</div>
+    <div class="item">🎯 <span id="progress">0/0</span></div>
+  </div>
+  <div id="prompt">
+    <button id="speakerBtn" title="Слушать произношение">🔊</button>
+    <div id="modeBadge">СЛОВА</div>
+    <div>Переведи на английский:</div>
+    <div id="target">—</div>
+  </div>
+  <div id="combo"></div>
+  <div id="playfield"></div>
+  <div id="overlay">
+    <h1 id="ovTitle">Word Catcher</h1>
+    <p id="ovText"></p>
+    <div class="score-big" id="ovScore"></div>
+    <div id="modeSelect"></div>
+    <button id="ovBtn">Играть</button>
+  </div>
+</div>
+
+<script>
+// ================= 20 СЛОВ ИЗ УРОКА 6 =================
+const WORDS = [
+  { en: "thing",            ru: "вещь" },
+  { en: "dress",            ru: "платье" },
+  { en: "flat",             ru: "квартира" },
+  { en: "apartment",        ru: "квартира" },
+  { en: "improve",          ru: "улучшить" },
+  { en: "better",           ru: "лучше" },
+  { en: "without",          ru: "без" },
+  { en: "grammar",          ru: "грамматика" },
+  { en: "correctly",        ru: "правильно" },
+  { en: "rightly",          ru: "правильно" },
+  { en: "learn",            ru: "выучить" },
+  { en: "right now",        ru: "прямо сейчас" },
+  { en: "fluently",         ru: "свободно" },
+  { en: "one more time",    ru: "ещё один раз" },
+  { en: "abroad",           ru: "за границу" },
+  { en: "another",          ru: "другой" },
+  { en: "thanks a lot",     ru: "спасибо большое" },
+  { en: "thanks a million", ru: "миллион раз спасибо" },
+  { en: "check",            ru: "проверять" },
+  { en: "to buy",           ru: "купить" }
+];
+
+// ================= ПРЕДЛОЖЕНИЯ ИЗ УРОКА 6 =================
+// Конструкция "I want ..." — все фразы из файла
+const SENTENCES = [
+  { en: "I want it",                                       ru: "Я хочу это" },
+  { en: "I want this thing",                               ru: "Я хочу эту вещь" },
+  { en: "I want this computer",                            ru: "Я хочу этот компьютер" },
+  { en: "I want this dress",                               ru: "Я хочу это платье" },
+  { en: "I want a new computer",                           ru: "Я хочу новый компьютер" },
+  { en: "I want a good car",                               ru: "Я хочу хорошую машину" },
+  { en: "I want a new flat",                               ru: "Я хочу новую квартиру" },
+  { en: "I really want it",                                ru: "Я очень хочу это" },
+  { en: "I want to do it",                                 ru: "Я хочу это сделать" },
+  { en: "She wants to do it",                              ru: "Она хочет это сделать" },
+  { en: "I want to know it",                               ru: "Я хочу это знать" },
+  { en: "I really want to know it",                        ru: "Я очень хочу это знать" },
+  { en: "I want to improve my English",                    ru: "Я хочу улучшить свой английский" },
+  { en: "I want to speak English better",                  ru: "Я хочу говорить по-английски лучше" },
+  { en: "I want to speak English without mistakes",        ru: "Я хочу говорить по-английски без ошибок" },
+  { en: "I want to improve my grammar",                    ru: "Я хочу улучшить свою грамматику" },
+  { en: "I want to speak English correctly",               ru: "Я хочу говорить по-английски правильно" },
+  { en: "I want to learn English fast",                    ru: "Я хочу выучить английский быстро" },
+  { en: "I want to have a good job",                       ru: "Я хочу иметь хорошую работу" },
+  { en: "I want to have a good car",                       ru: "Я хочу иметь хорошую машину" },
+  { en: "I want to be happy",                              ru: "Я хочу быть счастливым" },
+  { en: "She wants to do it right now",                    ru: "Она хочет сделать это прямо сейчас" },
+  { en: "He wants to buy this thing",                      ru: "Он хочет купить эту вещь" },
+  { en: "I want to speak English fluently and correctly",  ru: "Я хочу говорить по-английски свободно и правильно" },
+  { en: "My friend wants to check it one more time",       ru: "Мой друг хочет проверить это ещё один раз" },
+  { en: "My friend wants to live abroad",                  ru: "Мой друг хочет жить за границей" },
+  { en: "I want to go abroad",                             ru: "Я хочу поехать за границу" },
+  { en: "My parents want to live in another place",        ru: "Мои родители хотят жить в другом месте" },
+  { en: "I really want to thank you",                      ru: "Я очень хочу тебя поблагодарить" },
+  { en: "Thank you",                                       ru: "Спасибо тебе" },
+  { en: "Thanks a lot",                                    ru: "Спасибо большое" },
+  { en: "Thank you very much",                             ru: "Большое тебе спасибо" },
+  { en: "Thanks a million",                                ru: "Миллион раз спасибо" }
+];
+
+// ================= ЭЛЕМЕНТЫ =================
+const playfield = document.getElementById('playfield');
+const targetEl = document.getElementById('target');
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+const progressEl = document.getElementById('progress');
+const overlay = document.getElementById('overlay');
+const ovTitle = document.getElementById('ovTitle');
+const ovText = document.getElementById('ovText');
+const ovScore = document.getElementById('ovScore');
+const ovBtn = document.getElementById('ovBtn');
+const speakerBtn = document.getElementById('speakerBtn');
+const comboEl = document.getElementById('combo');
+const modeBadge = document.getElementById('modeBadge');
+const modeSelect = document.getElementById('modeSelect');
+const backBtn = document.getElementById('backBtn');
+
+// ================= СОСТОЯНИЕ =================
+let score = 0, lives = 3, answered = 0;
+let currentWord = null, activeBubbles = [], combo = 0, gameRunning = false;
+let animFrame = null;
+let usedIndices = [];
+let currentPool = [];        // пул вопросов текущего режима
+let currentMode = 'words';   // words | sentences | mix
+let totalQuestions = 0;
+
+// ================= ЗВУК (эффекты) =================
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+}
+function playCorrectSound() {
+  if (!audioCtx) return;
+  const notes = [523.25, 659.25, 783.99];
+  notes.forEach((freq, i) => {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    o.connect(g); g.connect(audioCtx.destination);
+    const t = audioCtx.currentTime + i * 0.08;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+    o.start(t); o.stop(t + 0.3);
+  });
+}
+function playWrongSound() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(220, audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.3);
+  o.connect(g); g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.25, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+  o.start(); o.stop(audioCtx.currentTime + 0.4);
+}
+
+// ================= ОЗВУЧКА АНГЛИЙСКОГО =================
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.9;
+  u.pitch = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang.startsWith('en'));
+  if (enVoice) u.voice = enVoice;
+  window.speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => {};
+  window.speechSynthesis.getVoices();
+}
+
+// ================= УТИЛИТЫ =================
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function updateLives() {
+  livesEl.textContent = '❤️'.repeat(Math.max(0,lives)) + '🖤'.repeat(Math.max(0,3 - lives));
+}
+function updateHUD() {
+  scoreEl.textContent = score;
+  progressEl.textContent = answered + '/' + totalQuestions;
+  updateLives();
+}
+
+// ================= ВЫБОР СЛЕДУЮЩЕГО ВОПРОСА =================
+function nextRound() {
+  if (answered >= totalQuestions) { winGame(); return; }
+  let available = currentPool.map((w, i) => i).filter(i => !usedIndices.includes(i));
+  if (available.length === 0) available = currentPool.map((w,i)=>i);
+  const idx = available[Math.floor(Math.random() * available.length)];
+  usedIndices.push(idx);
+  currentWord = currentPool[idx];
+  answered++;
+  targetEl.textContent = currentWord.ru;
+  updateHUD();
+  spawnBubbles();
+  startFalling();
+}
+
+// ================= ПУЗЫРИ =================
+function spawnBubbles() {
+  activeBubbles.forEach(b => { if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el); });
+  activeBubbles = [];
+  playfield.innerHTML = '';
+
+  const correct = currentWord.en;
+  // Берём неверные варианты из того же пула (чтобы были похожие по длине)
+  const others = currentPool.filter(w => w.en !== correct).map(w => w.en);
+  const uniqueOthers = [...new Set(others)];
+  const wrongChoices = shuffle(uniqueOthers).slice(0, 3);
+  const choices = shuffle([correct, ...wrongChoices]);
+
+  const rect = playfield.getBoundingClientRect();
+  const W = rect.width;
+  const bubbleH = 44;
+
+  choices.forEach((text, i) => {
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    el.textContent = text;
+    el.dataset.answer = text;
+    playfield.appendChild(el);
+    // измеряем
+    let bw = el.offsetWidth;
+    let bh = el.offsetHeight;
+    if (bw > W * 0.9) { bw = W * 0.9; }
+    // Делим ширину на колонки, чтобы не перекрывались
+    const cols = choices.length;
+    const laneWidth = W / cols;
+    let x = laneWidth * i + laneWidth / 2 - bw / 2;
+    x = Math.max(4, Math.min(W - bw - 4, x));
+    const y = -bh - 20 - Math.random() * 80;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+
+    const bubble = {
+      el, x, y,
+      vy: 38 + Math.random() * 25 + answered * 2,
+      text,
+      correct: text === correct
+    };
+    el.addEventListener('click', () => onBubbleClick(bubble));
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); onBubbleClick(bubble); }, { passive: false });
+    activeBubbles.push(bubble);
+  });
+}
+
+// ================= ПАДЕНИЕ =================
+let lastTime = 0;
+function startFalling() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  lastTime = performance.now();
+  const rect = playfield.getBoundingClientRect();
+  const H = rect.height;
+
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+
+    for (const b of activeBubbles) {
+      if (b.removed) continue;
+      b.y += b.vy * dt;
+      b.el.style.top = b.y + 'px';
+
+      if (b.y > H + 20) {
+        if (b.correct && !b.removed) {
+          b.removed = true;
+          loseLife();
+          activeBubbles.forEach(bb => {
+            if (bb.el && bb.el.parentNode) bb.el.parentNode.removeChild(bb.el);
+            bb.removed = true;
+          });
+          if (lives > 0) setTimeout(() => nextRound(), 500);
+          return;
+        } else {
+          b.removed = true;
+          if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el);
+        }
+      }
+    }
+    if (gameRunning) animFrame = requestAnimationFrame(loop);
+  }
+  animFrame = requestAnimationFrame(loop);
+}
+
+// ================= КЛИК =================
+function onBubbleClick(bubble) {
+  if (bubble.removed || !gameRunning) return;
+  bubble.removed = true;
+
+  const rect = playfield.getBoundingClientRect();
+  const bubbleRect = bubble.el.getBoundingClientRect();
+  const cx = bubbleRect.left - rect.left + bubbleRect.width / 2;
+  const cy = bubbleRect.top - rect.top + bubbleRect.height / 2;
+
+  if (bubble.correct) {
+    bubble.el.classList.add('correct');
+    const gain = 10 + combo * 2;
+    score += gain;
+    combo++;
+    updateHUD();
+    playCorrectSound();
+    showFloat('+' + gain, cx, cy, '#2ecc71');
+
+    if (combo >= 2) {
+      comboEl.textContent = '🔥 Комбо x' + combo + '!';
+      comboEl.classList.add('show');
+    }
+
+    // Озвучиваем правильное английское предложение/слово
+    speak(bubble.text);
+
+    activeBubbles.forEach(bb => {
+      if (bb !== bubble && bb.el && bb.el.parentNode && !bb.removed) {
+        bb.removed = true;
+        bb.el.style.transition = 'opacity 0.3s';
+        bb.el.style.opacity = '0';
+        setTimeout(() => { if (bb.el && bb.el.parentNode) bb.el.parentNode.removeChild(bb.el); }, 300);
+      }
+    });
+
+    setTimeout(() => {
+      if (answered >= totalQuestions) winGame();
+      else nextRound();
+    }, 900);
+  } else {
+    bubble.el.classList.add('wrong');
+    combo = 0;
+    comboEl.classList.remove('show');
+    playWrongSound();
+    showFloat('✖', cx, cy, '#e74c3c');
+    loseLife();
+    setTimeout(() => {
+      if (bubble.el && bubble.el.parentNode) bubble.el.parentNode.removeChild(bubble.el);
+    }, 500);
+  }
+}
+
+function loseLife() {
+  lives--;
+  updateLives();
+  if (lives <= 0) loseGame();
+}
+
+function showFloat(text, x, y, color) {
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  el.style.left = (x - 20) + 'px';
+  el.style.top = (y - 20) + 'px';
+  el.style.color = color;
+  el.style.textShadow = '0 0 20px ' + color;
+  playfield.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+// ================= КОНЕЦ =================
+function winGame() {
+  gameRunning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  ovTitle.textContent = '🎉 Победа!';
+  ovText.textContent = 'Ты прошёл все ' + totalQuestions + ' заданий! Отличная работа!';
+  ovScore.textContent = score + ' очков';
+  ovScore.style.display = 'block';
+  modeSelect.style.display = 'none';
+  ovBtn.style.display = 'inline-block';
+  ovBtn.textContent = 'В меню';
+  overlay.classList.add('show');
+  backBtn.classList.remove('show');
+  speak('Congratulations! You win!');
+}
+
+function loseGame() {
+  gameRunning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  activeBubbles.forEach(b => { if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el); b.removed = true; });
+  ovTitle.textContent = '💔 Игра окончена';
+  ovText.textContent = 'Не расстраивайся! Попробуй ещё раз — у тебя получится!';
+  ovScore.textContent = score + ' очков';
+  ovScore.style.display = 'block';
+  modeSelect.style.display = 'none';
+  ovBtn.style.display = 'inline-block';
+  ovBtn.textContent = 'В меню';
+  overlay.classList.add('show');
+  backBtn.classList.remove('show');
+}
+
+// ================= МЕНЮ / СТАРТ =================
+function showMenu() {
+  gameRunning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  playfield.innerHTML = '';
+  activeBubbles = [];
+  targetEl.textContent = '—';
+  ovTitle.textContent = 'Word Catcher — Lesson 6';
+  ovText.innerHTML = 'Выбери режим игры:';
+  ovScore.style.display = 'none';
+  ovBtn.style.display = 'none';
+  modeSelect.style.display = 'flex';
+  modeBadge.textContent = 'МЕНЮ';
+  backBtn.classList.remove('show');
+  overlay.classList.add('show');
+
+  modeSelect.innerHTML = `
+    <button class="words" data-mode="words">🟢 Слова<span class="sub">20 новых слов</span></button>
+    <button class="sents" data-mode="sentences">🔵 Предложения<span class="sub">${SENTENCES.length} фраз из урока</span></button>
+    <button class="mix" data-mode="mix">🟣 Микс<span class="sub">слова + предложения</span></button>
+  `;
+  modeSelect.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => startGame(btn.dataset.mode));
+  });
+}
+
+function startGame(mode) {
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+  currentMode = mode;
+  if (mode === 'words') {
+    currentPool = WORDS.slice();
+    modeBadge.textContent = 'СЛОВА';
+  } else if (mode === 'sentences') {
+    currentPool = SENTENCES.slice();
+    modeBadge.textContent = 'ПРЕДЛОЖЕНИЯ';
+  } else {
+    // микс: берём половину слов + половину предложений
+    const wCount = Math.ceil(WORDS.length / 2);
+    const sCount = Math.ceil(SENTENCES.length / 2);
+    currentPool = [...shuffle(WORDS).slice(0, wCount), ...shuffle(SENTENCES).slice(0, sCount)];
+    modeBadge.textContent = 'МИКС';
+  }
+
+  totalQuestions = currentPool.length;
+  score = 0; lives = 3; answered = 0; combo = 0; usedIndices = [];
+  gameRunning = true;
+  overlay.classList.remove('show');
+  comboEl.classList.remove('show');
+  playfield.innerHTML = '';
+  activeBubbles = [];
+  updateHUD();
+  backBtn.classList.add('show');
+  nextRound();
+}
+
+// ================= СОБЫТИЯ =================
+ovBtn.addEventListener('click', showMenu);
+backBtn.addEventListener('click', () => {
+  gameRunning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  showMenu();
+});
+speakerBtn.addEventListener('click', () => {
+  if (currentWord) {
+    speak(currentWord.en);
+    speakerBtn.style.transform = 'scale(0.85)';
+    setTimeout(() => speakerBtn.style.transform = 'scale(1)', 150);
+  }
+});
+
+updateHUD();
+showMenu();
+</script>
+</body>
+</html>
