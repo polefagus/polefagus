@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>English 6.1 — Practice Game</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:linear-gradient(135deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    min-height:100vh; overflow-x:hidden; padding:12px;
+  }
+  .app{
+    width:100%; max-width:560px; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12); border-radius:24px;
+    padding:22px 18px 26px; backdrop-filter:blur(14px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    position:relative; overflow:hidden;
+  }
+  .app::before{
+    content:''; position:absolute; top:-80px; right:-80px; width:200px; height:200px;
+    background:radial-gradient(circle,#e94560aa,transparent 70%); pointer-events:none;
+  }
+  .app::after{
+    content:''; position:absolute; bottom:-100px; left:-80px; width:220px; height:220px;
+    background:radial-gradient(circle,#533483aa,transparent 70%); pointer-events:none;
+  }
+  h1{font-size:1.25rem;text-align:center;margin:0 0 4px;letter-spacing:.5px;position:relative;z-index:2}
+  .subtitle{text-align:center;font-size:.8rem;color:#9fb3c8;margin-bottom:16px;position:relative;z-index:2}
+  .hud{display:flex;justify-content:space-between;gap:8px;margin-bottom:14px;position:relative;z-index:2}
+  .hud .box{
+    flex:1;background:rgba(255,255,255,0.08);border-radius:14px;padding:8px 6px;text-align:center;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .hud .label{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:#8ea9c1}
+  .hud .value{font-size:1.15rem;font-weight:700;color:#4ee1a0}
+  .hud .value.warn{color:#ffb347}
+  .progress{height:8px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden;margin-bottom:18px;position:relative;z-index:2}
+  .progress > div{height:100%;width:0%;background:linear-gradient(90deg,#4ee1a0,#38bdf8);border-radius:99px;transition:width .35s ease}
+  .question-card{
+    background:rgba(255,255,255,0.07);border-radius:18px;padding:18px 14px;margin-bottom:16px;
+    border:1px solid rgba(255,255,255,0.1);text-align:center;position:relative;z-index:2;
+    min-height:110px;display:flex;flex-direction:column;justify-content:center;gap:8px;
+  }
+  .prompt{font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#7fd1ae}
+  .task{font-size:1.1rem;line-height:1.45;font-weight:600;color:#fff;word-break:break-word}
+  .task .blank{color:#ffd166;letter-spacing:2px}
+  .options{display:grid;grid-template-columns:1fr;gap:10px;position:relative;z-index:2}
+  .option{
+    width:100%;text-align:left;padding:14px 16px;font-size:1rem;font-weight:500;
+    color:#eaf2f8;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.14);
+    border-radius:14px;cursor:pointer;transition:transform .12s ease,background .2s,border-color .2s;
+    font-family:inherit;line-height:1.35;
+  }
+  .option:active{transform:scale(.98)}
+  .option:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.3)}
+  .option.correct{background:rgba(78,225,160,0.22);border-color:#4ee1a0;color:#c9ffe6}
+  .option.wrong{background:rgba(233,69,96,0.22);border-color:#e94560;color:#ffd0d8}
+  .option:disabled{cursor:default;opacity:.9}
+  .feedback{
+    text-align:center;font-size:.9rem;margin-top:14px;min-height:22px;font-weight:600;
+    position:relative;z-index:2;transition:opacity .2s;
+  }
+  .feedback.ok{color:#4ee1a0}
+  .feedback.no{color:#ff8fa3}
+  .start-screen{text-align:center;position:relative;z-index:2;padding:10px 0 4px}
+  .start-screen p{color:#b8c9da;font-size:.92rem;line-height:1.5;margin:0 0 18px}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:15px 26px;font-size:1.05rem;font-weight:700;font-family:inherit;
+    color:#fff;background:linear-gradient(135deg,#e94560,#533483);
+    border:none;border-radius:16px;cursor:pointer;width:100%;
+    box-shadow:0 8px 24px rgba(233,69,96,0.35);transition:transform .12s,box-shadow .2s;
+  }
+  .btn:active{transform:scale(.97);box-shadow:0 4px 14px rgba(233,69,96,0.3)}
+  .btn.secondary{background:rgba(255,255,255,0.1);box-shadow:none;border:1.5px solid rgba(255,255,255,0.2);margin-top:10px}
+  .hidden{display:none!important}
+  .result-emoji{font-size:3rem;text-align:center;margin:6px 0 6px;position:relative;z-index:2}
+  .result-title{text-align:center;font-size:1.3rem;font-weight:800;margin:0 0 6px;position:relative;z-index:2}
+  .result-text{text-align:center;color:#b8c9da;font-size:.95rem;margin:0 0 20px;position:relative;z-index:2}
+  .streak-badge{
+    position:absolute;top:12px;right:14px;font-size:.7rem;font-weight:800;color:#ffd166;
+    background:rgba(255,209,102,0.12);border:1px solid rgba(255,209,102,0.3);
+    padding:4px 9px;border-radius:99px;z-index:3;opacity:0;transition:opacity .3s;
+  }
+  .streak-badge.show{opacity:1}
+  @media(min-width:520px){
+    .options{grid-template-columns:1fr 1fr}
+    .option{font-size:.95rem;padding:14px}
+    .task{font-size:1.2rem}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="streak-badge" id="streakBadge">🔥 серия</div>
+
+  <!-- START -->
+  <div id="startScreen" class="start-screen">
+    <h1>🎮 English Practice 6.1</h1>
+    <div class="subtitle">«I want to…» / «She wants to…»</div>
+    <p>Выбери правильный перевод предложения.<br>10 вопросов · звук · серия · прогресс</p>
+    <button class="btn" id="startBtn">Начать игру ▶</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="gameScreen" class="hidden">
+    <div class="hud">
+      <div class="box"><div class="label">Вопрос</div><div class="value" id="qCounter">1/10</div></div>
+      <div class="box"><div class="label">Очки</div><div class="value" id="scoreVal">0</div></div>
+      <div class="box"><div class="label">Серия</div><div class="value warn" id="streakVal">0</div></div>
+    </div>
+    <div class="progress"><div id="progressBar"></div></div>
+
+    <div class="question-card">
+      <div class="prompt" id="promptText">Переведи на английский</div>
+      <div class="task" id="taskText"></div>
+    </div>
+
+    <div class="options" id="optionsBox"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultScreen" class="hidden">
+    <div class="result-emoji" id="resultEmoji">🏆</div>
+    <div class="result-title" id="resultTitle">Отлично!</div>
+    <div class="result-text" id="resultText"></div>
+    <button class="btn" id="againBtn">Играть снова 🔁</button>
+    <button class="btn secondary" id="menuBtn">В меню</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= AUDIO ENGINE (works on mobile+desktop) ================= */
+  var AC = null;
+  function unlockAudio(){
+    if(!AC){
+      try{
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if(Ctx) AC = new Ctx();
+      }catch(e){ AC = null; }
+    }
+    if(AC && AC.state === "suspended"){ AC.resume(); }
+  }
+  // Разблокировка звука при первом касании/клике/нажатии клавиши
+  ["touchstart","touchend","mousedown","click","keydown","pointerdown"].forEach(function(ev){
+    document.addEventListener(ev, unlockAudio, {passive:true});
+  });
+
+  function tone(freq, start, dur, type, vol){
+    if(!AC) return;
+    var t0 = AC.currentTime + start;
+    var osc = AC.createOscillator();
+    var g = AC.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.18, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(AC.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+
+  function sfxCorrect(){
+    unlockAudio();
+    tone(523.25, 0,    0.12, "sine", 0.20); // C5
+    tone(659.25, 0.10, 0.12, "sine", 0.20); // E5
+    tone(783.99, 0.20, 0.22, "sine", 0.22); // G5
+  }
+  function sfxWrong(){
+    unlockAudio();
+    tone(196.00, 0,    0.16, "triangle", 0.22); // G3
+    tone(155.56, 0.13, 0.22, "triangle", 0.20); // Eb3
+  }
+  function sfxWin(){
+    unlockAudio();
+    var notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach(function(f,i){ tone(f, i*0.13, 0.28, "sine", 0.20); });
+  }
+  function sfxClick(){
+    unlockAudio();
+    tone(880, 0, 0.05, "square", 0.06);
+  }
+
+  /* ================= DATA FROM УРОК 6.1 ================= */
+  // Каждая запись: английское предложение + правильный русский перевод + ложные варианты
+  var ALL_QUESTIONS = [
+    { en:"I want to improve my grammar", ru:"Я хочу улучшить свою грамматику",
+      wrong:["Я хочу улучшить свой английский","Она хочет улучшить свою грамматику","Я хочу выучить грамматику"] },
+    { en:"I want to go there one more time", ru:"Я хочу пойти туда ещё раз",
+      wrong:["Я хочу пойти туда снова","Я хочу пойти туда в первый раз","Она хочет пойти туда ещё раз"] },
+    { en:"She wants to live in another place", ru:"Она хочет жить в другом месте",
+      wrong:["Я хочу жить в другом месте","Она хочет жить здесь","Она хочет переехать в другое место"] },
+    { en:"She wants to do it", ru:"Она хочет это сделать",
+      wrong:["Я хочу это сделать","Она хочет это знать","Она сделала это"] },
+    { en:"I want to know it", ru:"Я хочу это знать",
+      wrong:["Я хочу это сделать","Я знаю это","Я хочу знать английский"] },
+    { en:"I want to speak English without mistakes", ru:"Я хочу говорить по-английски без ошибок",
+      wrong:["Я хочу говорить по-английски правильно","Я хочу говорить по-английски быстро","Я хочу понимать английский без ошибок"] },
+    { en:"She wants to see you right now", ru:"Она хочет увидеть тебя прямо сейчас",
+      wrong:["Она хочет увидеть тебя завтра","Я хочу увидеть тебя прямо сейчас","Она видела тебя прямо сейчас"] },
+    { en:"I want this computer", ru:"Я хочу этот компьютер",
+      wrong:["Я хочу новый компьютер","Я хочу этот телефон","Мне нужен этот компьютер"] },
+    { en:"I want this dress", ru:"Я хочу это платье",
+      wrong:["Я хочу эту юбку","Я хочу новое платье","Она хочет это платье"] },
+    { en:"I want a good car", ru:"Я хочу хорошую машину",
+      wrong:["Я хочу новую машину","Мне нужна хорошая машина","Я хочу хорошую работу"] },
+    { en:"He wants to buy this thing", ru:"Он хочет купить эту вещь",
+      wrong:["Я хочу купить эту вещь","Он купил эту вещь","Он хочет продать эту вещь"] },
+    { en:"I want to go there again", ru:"Я хочу пойти туда снова",
+      wrong:["Я хочу пойти туда ещё раз","Я хочу пойти туда сейчас","Она хочет пойти туда снова"] },
+    { en:"I want to have a good job", ru:"Я хочу иметь хорошую работу",
+      wrong:["Я хочу хорошую машину","Я хочу найти хорошую работу","Я имею хорошую работу"] },
+    { en:"I want to speak English fluently and correctly", ru:"Я хочу говорить по-английски свободно и правильно",
+      wrong:["Я хочу говорить по-английски быстро и правильно","Я хочу говорить по-английски свободно","Я хочу понимать английский свободно и правильно"] },
+    { en:"I really want it", ru:"Я действительно этого хочу",
+      wrong:["Я очень этого хочу","Я действительно это знаю","Я действительно хочу это сделать"] },
+    { en:"I want to do it", ru:"Я хочу это сделать",
+      wrong:["Я хочу это знать","Она хочет это сделать","Я сделал это"] },
+    { en:"I want to be happy", ru:"Я хочу быть счастливым",
+      wrong:["Я хочу быть здоровым","Я хочу быть успешным","Она хочет быть счастливой"] },
+    { en:"I want to thank you", ru:"Я хочу поблагодарить тебя",
+      wrong:["Я хочу тебя увидеть","Я благодарю тебя","Я хочу сказать тебе"] },
+    { en:"I want to know English better", ru:"Я хочу знать английский лучше",
+      wrong:["Я хочу говорить по-английски лучше","Я хочу знать английский хорошо","Я знаю английский лучше"] },
+    { en:"I really want to know it", ru:"Я действительно хочу это знать",
+      wrong:["Я действительно это знаю","Я действительно хочу это сделать","Я очень хочу это знать"] },
+    { en:"I want a new computer", ru:"Я хочу новый компьютер",
+      wrong:["Я хочу этот компьютер","Мне нужен новый компьютер","Я хочу новый телефон"] },
+    { en:"I want to speak English better", ru:"Я хочу говорить по-английски лучше",
+      wrong:["Я хочу знать английский лучше","Я хочу говорить по-английски правильно","Я говорю по-английски лучше"] },
+    { en:"I want to speak English correctly", ru:"Я хочу говорить по-английски правильно",
+      wrong:["Я хочу говорить по-английски лучше","Я хочу говорить по-английски без ошибок","Я хочу понимать английский правильно"] },
+    { en:"My parents want to live in another place", ru:"Мои родители хотят жить в другом месте",
+      wrong:["Мои родители хотят жить здесь","Я хочу жить в другом месте","Мои родители живут в другом месте"] },
+    { en:"I want to improve my English", ru:"Я хочу улучшить свой английский",
+      wrong:["Я хочу улучшить свою грамматику","Я хочу выучить английский","Она хочет улучшить свой английский"] },
+    { en:"I want to go in another place", ru:"Я хочу пойти в другое место",
+      wrong:["Я хочу жить в другом месте","Я хочу пойти туда","Она хочет пойти в другое место"] },
+    { en:"I want a new flat", ru:"Я хочу новую квартиру",
+      wrong:["Я хочу новый дом","Мне нужна новая квартира","Я хочу новую машину"] },
+    { en:"I want to buy a new flat", ru:"Я хочу купить новую квартиру",
+      wrong:["Я хочу новую квартиру","Я хочу купить новый дом","Она хочет купить новую квартиру"] },
+    { en:"My friend wants to live abroad", ru:"Мой друг хочет жить за границей",
+      wrong:["Мой друг хочет жить здесь","Я хочу жить за границей","Мой друг живёт за границей"] },
+    { en:"She wants to do it right now", ru:"Она хочет сделать это прямо сейчас",
+      wrong:["Она хочет сделать это сейчас","Я хочу сделать это прямо сейчас","Она сделала это прямо сейчас"] },
+    { en:"My friend wants to check it one more time", ru:"Мой друг хочет проверить это ещё раз",
+      wrong:["Мой друг хочет проверить это снова","Я хочу проверить это ещё раз","Мой друг проверил это ещё раз"] },
+    { en:"I want it", ru:"Я хочу это",
+      wrong:["Я хочу это сделать","Я знаю это","Она хочет это"] },
+    { en:"I want to go abroad", ru:"Я хочу поехать за границу",
+      wrong:["Я хочу жить за границей","Я хочу поехать туда","Она хочет поехать за границу"] },
+    { en:"I want this thing", ru:"Я хочу эту вещь",
+      wrong:["Я хочу эту вещь купить","Он хочет эту вещь","Я хочу это"] },
+    { en:"I want to have a good car", ru:"Я хочу иметь хорошую машину",
+      wrong:["Я хочу хорошую машину","Я хочу иметь хорошую работу","Я имею хорошую машину"] },
+    { en:"I want to learn English fast", ru:"Я хочу выучить английский быстро",
+      wrong:["Я хочу выучить английский хорошо","Я хочу говорить по-английски быстро","Я выучил английский быстро"] },
+    { en:"We want to know English", ru:"Мы хотим знать английский",
+      wrong:["Мы знаем английский","Я хочу знать английский","Мы хотим выучить английский"] }
+  ];
+
+  var QUESTIONS_PER_GAME = 10;
+
+  /* ================= UTILS ================= */
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ================= STATE ================= */
+  var state = {
+    questions: [],
+    index: 0,
+    score: 0,
+    streak: 0,
+    bestStreak: 0,
+    correctCount: 0,
+    locked: false
+  };
+
+  /* ================= DOM ================= */
+  var startScreen   = document.getElementById("startScreen");
+  var gameScreen    = document.getElementById("gameScreen");
+  var resultScreen  = document.getElementById("resultScreen");
+  var startBtn      = document.getElementById("startBtn");
+  var againBtn      = document.getElementById("againBtn");
+  var menuBtn       = document.getElementById("menuBtn");
+  var optionsBox    = document.getElementById("optionsBox");
+  var taskText      = document.getElementById("taskText");
+  var promptText    = document.getElementById("promptText");
+  var feedbackEl    = document.getElementById("feedback");
+  var qCounter      = document.getElementById("qCounter");
+  var scoreVal      = document.getElementById("scoreVal");
+  var streakVal     = document.getElementById("streakVal");
+  var progressBar   = document.getElementById("progressBar");
+  var resultEmoji   = document.getElementById("resultEmoji");
+  var resultTitle   = document.getElementById("resultTitle");
+  var resultText    = document.getElementById("resultText");
+  var streakBadge   = document.getElementById("streakBadge");
+
+  /* ================= GAME FLOW ================= */
+  function buildQuestions(){
+    var pool = shuffle(ALL_QUESTIONS).slice(0, QUESTIONS_PER_GAME);
+    return pool.map(function(item){
+      var opts = shuffle([item.ru].concat(shuffle(item.wrong).slice(0,3)));
+      return { en:item.en, correct:item.ru, options:opts };
+    });
+  }
+
+  function startGame(){
+    unlockAudio();
+    state.questions = buildQuestions();
+    state.index = 0;
+    state.score = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    state.correctCount = 0;
+    state.locked = false;
+
+    startScreen.classList.add("hidden");
+    resultScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+
+    renderQuestion();
+  }
+
+  function renderQuestion(){
+    var q = state.questions[state.index];
+    state.locked = false;
+
+    qCounter.textContent = (state.index+1) + "/" + state.questions.length;
+    scoreVal.textContent = state.score;
+    streakVal.textContent = state.streak;
+    progressBar.style.width = (state.index / state.questions.length * 100) + "%";
+
+    promptText.textContent = "Переведи на русский";
+    taskText.textContent = q.en;
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+
+    optionsBox.innerHTML = "";
+    q.options.forEach(function(opt){
+      var btn = document.createElement("button");
+      btn.className = "option";
+      btn.type = "button";
+      btn.textContent = opt;
+      btn.addEventListener("click", function(){ chooseOption(btn, opt, q.correct); });
+      optionsBox.appendChild(btn);
+    });
+  }
+
+  function chooseOption(btn, chosen, correct){
+    if(state.locked) return;
+    state.locked = true;
+
+    var buttons = optionsBox.querySelectorAll(".option");
+    for(var i=0;i<buttons.length;i++){ buttons[i].disabled = true; }
+
+    var isCorrect = (chosen === correct);
+
+    if(isCorrect){
+      btn.classList.add("correct");
+      state.score += 10;
+      state.streak += 1;
+      state.correctCount += 1;
+      if(state.streak > state.bestStreak) state.bestStreak = state.streak;
+
+      feedbackEl.textContent = "✅ Верно! +10";
+      feedbackEl.className = "feedback ok";
+      sfxCorrect();
+
+      if(state.streak >= 3){
+        streakBadge.textContent = "🔥 серия " + state.streak;
+        streakBadge.classList.add("show");
+      }
+    } else {
+      btn.classList.add("wrong");
+      state.streak = 0;
+      feedbackEl.textContent = "❌ Правильно: " + correct;
+      feedbackEl.className = "feedback no";
+      sfxWrong();
+      streakBadge.classList.remove("show");
+
+      // подсветить правильный вариант
+      for(var k=0;k<buttons.length;k++){
+        if(buttons[k].textContent === correct){
+          buttons[k].classList.add("correct");
+          break;
+        }
+      }
+    }
+
+    scoreVal.textContent = state.score;
+    streakVal.textContent = state.streak;
+
+    setTimeout(function(){
+      state.index += 1;
+      if(state.index >= state.questions.length){
+        finishGame();
+      } else {
+        renderQuestion();
+      }
+    }, isCorrect ? 900 : 1700);
+  }
+
+  function finishGame(){
+    gameScreen.classList.add("hidden");
+    resultScreen.classList.remove("hidden");
+    progressBar.style.width = "100%";
+
+    var total = state.questions.length;
+    var pct = Math.round(state.correctCount / total * 100);
+
+    var emoji, title;
+    if(pct === 100){ emoji = "🏆"; title = "Идеально!"; }
+    else if(pct >= 80){ emoji = "🎉"; title = "Отлично!"; }
+    else if(pct >= 60){ emoji = "👍"; title = "Хорошо!"; }
+    else if(pct >= 40){ emoji = "💪"; title = "Неплохо!"; }
+    else { emoji = "📚"; title = "Продолжай тренироваться!"; }
+
+    resultEmoji.textContent = emoji;
+    resultTitle.textContent = title;
+    resultText.innerHTML =
+      "Правильно: <b>" + state.correctCount + "</b> из <b>" + total + "</b> (" + pct + "%)<br>" +
+      "Очки: <b>" + state.score + "</b> · Лучшая серия: <b>" + state.bestStreak + "</b> 🔥";
+
+    if(pct >= 60) sfxWin();
+    else sfxClick();
+  }
+
+  function goMenu(){
+    gameScreen.classList.add("hidden");
+    resultScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+    streakBadge.classList.remove("show");
+  }
+
+  /* ================= EVENTS ================= */
+  startBtn.addEventListener("click", function(){ sfxClick(); startGame(); });
+  againBtn.addEventListener("click", function(){ sfxClick(); startGame(); });
+  menuBtn.addEventListener("click", function(){ sfxClick(); goMenu(); });
+
+  // Клавиатура: 1-4 выбор варианта, Enter — начать/продолжить
+  document.addEventListener("keydown", function(e){
+    if(!gameScreen.classList.contains("hidden") && !state.locked){
+      var n = parseInt(e.key, 10);
+      if(n >= 1 && n <= 4){
+        var btns = optionsBox.querySelectorAll(".option");
+        if(btns[n-1]) btns[n-1].click();
+      }
+    } else if(!startScreen.classList.contains("hidden") && (e.key === "Enter" || e.key === " ")){
+      startBtn.click();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
