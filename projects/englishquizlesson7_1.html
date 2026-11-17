@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D English Lesson 7.1 — Игра</title>
+    <title>3D English Lesson 7.1 — Квиз</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-            background-color: #0a0f1e;
+            background-color: #050a14;
             color: white;
             touch-action: manipulation;
+            user-select: none;
         }
         #canvas-container {
             position: fixed;
@@ -21,177 +22,12 @@
             height: 100%;
             z-index: 0;
         }
-        .game-ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            box-sizing: border-box;
-            z-index: 10;
-            pointer-events: none;
-        }
-        .game-ui > * {
-            pointer-events: auto;
-        }
-        .header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(10, 20, 40, 0.7);
-            backdrop-filter: blur(12px);
-            padding: 12px 20px;
-            border-radius: 60px;
-            border: 1px solid rgba(100, 180, 255, 0.3);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            color: #e0f0ff;
-            font-weight: 600;
-        }
-        .score {
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .score span {
-            background: #2a6df4;
-            padding: 4px 12px;
-            border-radius: 40px;
-            color: white;
-            font-weight: 700;
-            font-size: 1.3rem;
-            box-shadow: 0 0 15px #2a6df4aa;
-        }
-        .question-counter {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-size: 0.95rem;
-        }
-        .main-card {
-            width: 100%;
-            max-width: 700px;
-            background: rgba(12, 25, 45, 0.85);
-            backdrop-filter: blur(16px);
-            border-radius: 48px;
-            padding: 28px 20px 30px;
-            border: 1px solid rgba(80, 160, 255, 0.3);
-            box-shadow: 0 25px 50px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-            text-align: center;
-            transition: transform 0.2s;
-            margin-bottom: 20px;
-        }
-        .english-phrase {
-            font-size: 1.9rem;
-            font-weight: 700;
-            line-height: 1.3;
-            color: #ffffff;
-            margin-bottom: 12px;
-            text-shadow: 0 4px 20px rgba(0, 150, 255, 0.5);
-            word-break: break-word;
-        }
-        .translation-hint {
-            font-size: 1.1rem;
-            color: #a0c8ff;
-            background: rgba(42, 109, 244, 0.15);
-            display: inline-block;
-            padding: 6px 22px;
-            border-radius: 60px;
-            border: 1px solid #2a6df455;
-            margin-bottom: 24px;
-            letter-spacing: 0.3px;
-        }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 8px;
-        }
-        .option-btn {
-            background: rgba(30, 50, 80, 0.9);
-            border: 1.5px solid rgba(100, 180, 255, 0.4);
-            color: #eef7ff;
-            padding: 16px 12px;
-            border-radius: 28px;
-            font-size: 1.05rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 4px 0 #0a1424, 0 8px 15px rgba(0, 0, 0, 0.3);
-            line-height: 1.35;
-            word-break: break-word;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 70px;
-            text-align: center;
-        }
-        .option-btn:hover {
-            background: rgba(50, 90, 150, 0.9);
-            border-color: #4a9eff;
-            transform: translateY(-2px);
-        }
-        .option-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 1px 0 #0a1424;
-        }
-        .option-btn.correct {
-            background: #1e8a4c;
-            border-color: #4cff9a;
-            box-shadow: 0 0 25px #2aff7aaa;
-        }
-        .option-btn.wrong {
-            background: #9e2a2a;
-            border-color: #ff6b6b;
-        }
-        .option-btn:disabled {
-            opacity: 0.75;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .footer {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-top: 8px;
-        }
-        .next-btn {
-            background: linear-gradient(135deg, #2a6df4, #1a4bb0);
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 700;
-            padding: 14px 42px;
-            border-radius: 60px;
-            cursor: pointer;
-            box-shadow: 0 8px 25px #2a6df4aa, 0 4px 0 #0c2a5e;
-            transition: all 0.15s;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .next-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 15px #2a6df4aa, 0 1px 0 #0c2a5e;
-        }
-        .next-btn:disabled {
-            opacity: 0.4;
-            transform: translateY(0);
-            box-shadow: none;
-            pointer-events: none;
-        }
-        .final-screen {
+        /* Экраны меню и результатов */
+        .screen-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(5, 12, 25, 0.95);
-            backdrop-filter: blur(20px);
+            background: rgba(5, 10, 20, 0.85);
+            backdrop-filter: blur(12px);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -199,87 +35,245 @@
             z-index: 100;
             padding: 20px;
             text-align: center;
-            transition: opacity 0.4s;
+            transition: opacity 0.3s;
         }
-        .final-screen h1 {
-            font-size: 3rem;
+        .screen-overlay.hidden {
+            display: none;
+        }
+        .screen-overlay h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
             color: #7ab7ff;
-            text-shadow: 0 0 40px #2a6df4;
-            margin-bottom: 8px;
+            text-shadow: 0 0 30px #2a6df4aa;
+            line-height: 1.1;
         }
-        .final-screen p {
-            font-size: 1.4rem;
-            color: #ccddff;
-            margin: 10px 0 30px;
+        .screen-overlay p {
+            font-size: 1.1rem;
+            color: #a0c8ff;
+            margin-bottom: 30px;
         }
-        .final-screen .score-big {
-            font-size: 3.5rem;
+        .mode-btn {
+            background: rgba(30, 60, 110, 0.6);
+            border: 2px solid #4a9eff;
+            color: white;
+            padding: 18px 30px;
+            margin: 10px 0;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .mode-btn:hover, .mode-btn:active {
+            background: #2a6df4;
+            transform: scale(1.03);
+            box-shadow: 0 0 25px #2a6df4aa;
+        }
+        .mode-btn span {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 400;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        /* Игровой интерфейс (HUD) */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .hud-box {
+            background: rgba(10, 20, 40, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(100, 180, 255, 0.3);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e0f0ff;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: auto;
+        }
+        #score-val { color: #ffd966; font-size: 1.4rem; }
+        #timer-val { color: #ff6b6b; font-size: 1.4rem; }
+
+        /* Верхняя часть с вопросом (парит над 3D-сценой) */
+        #question-panel {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #question-text {
+            font-size: 2.2rem;
             font-weight: 800;
-            color: #ffd966;
-            text-shadow: 0 0 30px #ffaa00;
+            color: #ffffff;
+            text-shadow: 0 5px 20px rgba(0, 150, 255, 0.6);
+            background: rgba(10, 20, 40, 0.6);
+            padding: 15px 30px;
+            border-radius: 30px;
+            display: inline-block;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(100, 180, 255, 0.2);
         }
-        .restart-btn {
-            background: linear-gradient(135deg, #ffb347, #f57c00);
+        #audio-btn {
+            margin-top: 15px;
+            background: #2a6df4;
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 5px 15px #2a6df4aa;
+            display: none;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 3D-кнопки ответов, позиционируемые поверх сцены */
+        .answer-btn {
+            position: absolute;
+            background: rgba(20, 40, 70, 0.85);
+            border: 2px solid rgba(100, 180, 255, 0.4);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 0 10px rgba(100,180,255,0.1);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 20;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 350px;
+            line-height: 1.3;
+        }
+        .answer-btn:hover {
+            background: rgba(50, 90, 150, 0.95);
+            border-color: #4a9eff;
+            box-shadow: 0 0 30px #4a9effaa, inset 0 0 15px #4a9eff55;
+        }
+        .answer-btn.correct {
+            background: rgba(30, 138, 76, 0.95);
+            border-color: #4cff9a;
+            box-shadow: 0 0 40px #2aff7aaa;
+            pointer-events: none;
+        }
+        .answer-btn.wrong {
+            background: rgba(158, 42, 42, 0.95);
+            border-color: #ff6b6b;
+            box-shadow: 0 0 30px #ff6b6baa;
+            pointer-events: none;
+        }
+        .answer-btn.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Нижняя панель */
+        #bottom-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: none;
+        }
+        #next-btn {
+            background: linear-gradient(135deg, #2a6df4, #1a4bb0);
             border: none;
             color: white;
             font-size: 1.3rem;
             font-weight: 700;
             padding: 16px 50px;
-            border-radius: 70px;
+            border-radius: 60px;
             cursor: pointer;
-            box-shadow: 0 10px 30px #ff8c00aa, 0 4px 0 #9e4b00;
+            box-shadow: 0 10px 25px #2a6df4aa, 0 4px 0 #0c2a5e;
             transition: all 0.15s;
-            margin-top: 20px;
         }
-        .restart-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 15px #ff8c00aa, 0 1px 0 #9e4b00;
-        }
-        @media (max-width: 550px) {
-            .english-phrase { font-size: 1.5rem; }
-            .options-grid { grid-template-columns: 1fr; gap: 10px; }
-            .option-btn { min-height: 60px; font-size: 0.95rem; padding: 12px; }
-            .main-card { padding: 20px 14px; border-radius: 36px; }
-            .header { padding: 10px 14px; }
-            .score { font-size: 1rem; }
-            .score span { font-size: 1.1rem; }
-            .question-counter { font-size: 0.8rem; padding: 4px 10px; }
-            .next-btn { font-size: 1rem; padding: 12px 28px; }
-        }
-        @media (max-height: 700px) {
-            .main-card { padding: 16px 14px; }
-            .english-phrase { font-size: 1.4rem; }
-            .translation-hint { font-size: 0.95rem; margin-bottom: 14px; }
-            .option-btn { min-height: 54px; font-size: 0.9rem; padding: 10px; }
+        #next-btn:active { transform: translateY(4px); box-shadow: 0 4px 15px #2a6df4aa; }
+        
+        .final-stats { font-size: 1.5rem; margin: 15px 0; color: #a0c8ff; }
+        .final-stats span { color: #ffd966; font-weight: 800; font-size: 2rem; }
+
+        @media (max-width: 600px) {
+            #question-text { font-size: 1.6rem; padding: 10px 20px; }
+            .answer-btn { font-size: 1rem; padding: 12px 15px; width: 90%; }
+            .screen-overlay h1 { font-size: 2rem; }
+            .mode-btn { font-size: 1rem; padding: 14px 20px; }
+            #hud { padding: 10px; }
+            .hud-box { padding: 8px 15px; font-size: 0.9rem; }
+            #score-val, #timer-val { font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
 
-    <div class="game-ui" id="gameUI">
-        <div class="header">
-            <div class="score">⭐ Счёт: <span id="scoreDisplay">0</span></div>
-            <div class="question-counter" id="counterDisplay">1 / 40</div>
-        </div>
-
-        <div class="main-card" id="mainCard">
-            <div class="english-phrase" id="englishPhrase">I like this video</div>
-            <div class="translation-hint" id="translationHint">Мне нравится это видео</div>
-            <div class="options-grid" id="optionsGrid"></div>
-        </div>
-
-        <div class="footer">
-            <button class="next-btn" id="nextBtn" disabled>Далее ➔</button>
-        </div>
+    <!-- Меню выбора режима -->
+    <div class="screen-overlay" id="menu-screen">
+        <h1>Урок 7.1</h1>
+        <p>Выбери режим закрепления знаний</p>
+        <button class="mode-btn" onclick="startGame('en-ru')">
+            🇬🇧 Английский ➔ 🇷🇺 Русский
+            <span>Классический перевод</span>
+        </button>
+        <button class="mode-btn" onclick="startGame('ru-en')">
+            🇷🇺 Русский ➔ 🇬🇧 Английский
+            <span>Обратный перевод</span>
+        </button>
+        <button class="mode-btn" onclick="startGame('audio')">
+            🎧 Аудирование
+            <span>Слушай фразу и выбирай текст</span>
+        </button>
     </div>
 
-    <div class="final-screen" id="finalScreen" style="display: none;">
-        <h1>🎉 Урок пройден!</h1>
-        <p>Твой результат:</p>
-        <div class="score-big" id="finalScore">0</div>
-        <p style="font-size: 1.1rem; opacity: 0.8;">из 40 очков</p>
-        <button class="restart-btn" id="restartBtn">Играть снова</button>
+    <!-- Экран результатов -->
+    <div class="screen-overlay hidden" id="end-screen">
+        <h1>Игра завершена!</h1>
+        <div class="final-stats">Твой результат: <br><span id="final-score">0</span> / 10</div>
+        <p id="final-msg">Отличная работа!</p>
+        <button class="mode-btn" onclick="location.reload()">В главное меню</button>
+    </div>
+
+    <!-- Игровой интерфейс -->
+    <div id="hud" style="display:none;">
+        <div class="hud-box">⭐ Счёт: <span id="score-val">0</span></div>
+        <div class="hud-box">⏱ <span id="timer-val">45</span>с</div>
+    </div>
+
+    <div id="question-panel" style="display:none;">
+        <div id="question-text">Loading...</div>
+        <button id="audio-btn" onclick="playAudio()">🔊 Слушать</button>
+    </div>
+
+    <div id="bottom-panel">
+        <button id="next-btn" onclick="nextQuestion()">Далее ➔</button>
     </div>
 
     <script type="importmap">
@@ -293,418 +287,459 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // ---------- ДАННЫЕ УРОКА 7.1 (все 40 фраз) ----------
+        // ---------- ДАННЫЕ (ВСЕ 40 ФРАЗ) ----------
         const LESSON = [
-            { en: "I like this video", ru: "Мне нравится это видео", correct: "Мне нравится это видео" },
-            { en: "I like this thing", ru: "Мне нравится эта вещь", correct: "Мне нравится эта вещь" },
-            { en: "I'd like to drink a cup of coffee", ru: "Я хотел бы выпить чашку кофе", correct: "Я хотел бы выпить чашку кофе" },
-            { en: "I like this playlist", ru: "Мне нравится этот плейлист", correct: "Мне нравится этот плейлист" },
-            { en: "I'd like to do it", ru: "Я хотел бы сделать это", correct: "Я хотел бы сделать это" },
-            { en: "I`d like to visit this place", ru: "Я хотел бы посетить это место", correct: "Я хотел бы посетить это место" },
-            { en: "I`d like a cup of coffee", ru: "Я хотел бы чашку кофе", correct: "Я хотел бы чашку кофе" },
-            { en: "I`d like to become a businessman", ru: "Я хотел бы стать бизнесменом", correct: "Я хотел бы стать бизнесменом" },
-            { en: "She'd like to become a teacher", ru: "Она хотела бы стать учительницей", correct: "Она хотела бы стать учительницей" },
-            { en: "He likes this dress", ru: "Ему нравится это платье", correct: "Ему нравится это платье" },
-            { en: "I see you really like English", ru: "Я вижу, тебе очень нравится английский", correct: "Я вижу, тебе очень нравится английский" },
-            { en: "My friend likes this hotel", ru: "Моему другу нравится этот отель", correct: "Моему другу нравится этот отель" },
-            { en: "I like English", ru: "Мне нравится английский", correct: "Мне нравится английский" },
-            { en: "I really like this playlist", ru: "Мне очень нравится этот плейлист", correct: "Мне очень нравится этот плейлист" },
-            { en: "I like this channel", ru: "Мне нравится этот канал", correct: "Мне нравится этот канал" },
-            { en: "She likes this place", ru: "Ей нравится это место", correct: "Ей нравится это место" },
-            { en: "You like it", ru: "Тебе нравится это", correct: "Тебе нравится это" },
-            { en: "She likes it", ru: "Ей нравится это", correct: "Ей нравится это" },
-            { en: "I see he really likes it", ru: "Я вижу, ему очень нравится это", correct: "Я вижу, ему очень нравится это" },
-            { en: "I really like this channel", ru: "Мне очень нравится этот канал", correct: "Мне очень нравится этот канал" },
-            { en: "I`d like to know English very well", ru: "Я хотел бы очень хорошо знать английский", correct: "Я хотел бы очень хорошо знать английский" },
-            { en: "They like it", ru: "Им нравится это", correct: "Им нравится это" },
-            { en: "I like it", ru: "Мне нравится это", correct: "Мне нравится это" },
-            { en: "I`d like to drink a cup of tea", ru: "Я хотел бы выпить чашку чая", correct: "Я хотел бы выпить чашку чая" },
-            { en: "I know they like it", ru: "Я знаю, им нравится это", correct: "Я знаю, им нравится это" },
-            { en: "I like this method", ru: "Мне нравится этот метод", correct: "Мне нравится этот метод" },
-            { en: "We like it", ru: "Нам нравится это", correct: "Нам нравится это" },
-            { en: "I`d like a cup of tea", ru: "Я хотел бы чашку чая", correct: "Я хотел бы чашку чая" },
-            { en: "I also like this channel", ru: "Мне также нравится этот канал", correct: "Мне также нравится этот канал" },
-            { en: "I like this channel too", ru: "Мне тоже нравится этот канал", correct: "Мне тоже нравится этот канал" },
-            { en: "I really like this place", ru: "Мне очень нравится это место", correct: "Мне очень нравится это место" },
-            { en: "I really like it", ru: "Мне очень нравится это", correct: "Мне очень нравится это" },
-            { en: "He`d like to become a doctor", ru: "Он хотел бы стать врачом", correct: "Он хотел бы стать врачом" },
-            { en: "I like your lessons", ru: "Мне нравятся твои уроки", correct: "Мне нравятся твои уроки" },
-            { en: "I`d like to become a businessman", ru: "Я хотел бы стать бизнесменом", correct: "Я хотел бы стать бизнесменом" },
-            { en: "I really like these lessons", ru: "Мне очень нравятся эти уроки", correct: "Мне очень нравятся эти уроки" },
-            { en: "I`d like to become a manager", ru: "Я хотел бы стать менеджером", correct: "Я хотел бы стать менеджером" },
-            { en: "I like this idea", ru: "Мне нравится эта идея", correct: "Мне нравится эта идея" },
-            { en: "I`d like to go abroad", ru: "Я хотел бы поехать за границу", correct: "Я хотел бы поехать за границу" },
-            { en: "She'd like to go to another place", ru: "Она хотела бы поехать в другое место", correct: "Она хотела бы поехать в другое место" }
+            { en: "I like this video", ru: "Мне нравится это видео" },
+            { en: "I like this thing", ru: "Мне нравится эта вещь" },
+            { en: "I'd like to drink a cup of coffee", ru: "Я хотел бы выпить чашку кофе" },
+            { en: "I like this playlist", ru: "Мне нравится этот плейлист" },
+            { en: "I'd like to do it", ru: "Я хотел бы сделать это" },
+            { en: "I`d like to visit this place", ru: "Я хотел бы посетить это место" },
+            { en: "I`d like a cup of coffee", ru: "Я хотел бы чашку кофе" },
+            { en: "I`d like to become a businessman", ru: "Я хотел бы стать бизнесменом" },
+            { en: "She'd like to become a teacher", ru: "Она хотела бы стать учительницей" },
+            { en: "He likes this dress", ru: "Ему нравится это платье" },
+            { en: "I see you really like English", ru: "Я вижу, тебе очень нравится английский" },
+            { en: "My friend likes this hotel", ru: "Моему другу нравится этот отель" },
+            { en: "I like English", ru: "Мне нравится английский" },
+            { en: "I really like this playlist", ru: "Мне очень нравится этот плейлист" },
+            { en: "I like this channel", ru: "Мне нравится этот канал" },
+            { en: "She likes this place", ru: "Ей нравится это место" },
+            { en: "You like it", ru: "Тебе нравится это" },
+            { en: "She likes it", ru: "Ей нравится это" },
+            { en: "I see he really likes it", ru: "Я вижу, ему очень нравится это" },
+            { en: "I really like this channel", ru: "Мне очень нравится этот канал" },
+            { en: "I`d like to know English very well", ru: "Я хотел бы очень хорошо знать английский" },
+            { en: "They like it", ru: "Им нравится это" },
+            { en: "I like it", ru: "Мне нравится это" },
+            { en: "I`d like to drink a cup of tea", ru: "Я хотел бы выпить чашку чая" },
+            { en: "I know they like it", ru: "Я знаю, им нравится это" },
+            { en: "I like this method", ru: "Мне нравится этот метод" },
+            { en: "We like it", ru: "Нам нравится это" },
+            { en: "I`d like a cup of tea", ru: "Я хотел бы чашку чая" },
+            { en: "I also like this channel", ru: "Мне также нравится этот канал" },
+            { en: "I like this channel too", ru: "Мне тоже нравится этот канал" },
+            { en: "I really like this place", ru: "Мне очень нравится это место" },
+            { en: "I really like it", ru: "Мне очень нравится это" },
+            { en: "He`d like to become a doctor", ru: "Он хотел бы стать врачом" },
+            { en: "I like your lessons", ru: "Мне нравятся твои уроки" },
+            { en: "I`d like to become a businessman", ru: "Я хотел бы стать бизнесменом" },
+            { en: "I really like these lessons", ru: "Мне очень нравятся эти уроки" },
+            { en: "I`d like to become a manager", ru: "Я хотел бы стать менеджером" },
+            { en: "I like this idea", ru: "Мне нравится эта идея" },
+            { en: "I`d like to go abroad", ru: "Я хотел бы поехать за границу" },
+            { en: "She'd like to go to another place", ru: "Она хотела бы поехать в другое место" }
         ];
 
         // ---------- ПЕРЕМЕННЫЕ ИГРЫ ----------
-        let currentQuestions = []; // перемешанные
+        let currentMode = 'en-ru';
+        let questions = [];
         let currentIndex = 0;
         let score = 0;
-        let answered = false;
-        let totalQuestions = 0;
+        let timer = null;
+        let timeLeft = 45;
+        let canAnswer = true;
+        let totalQuestions = 10; // По 10 вопросов за раунд
 
-        // DOM элементы
-        const englishPhraseEl = document.getElementById('englishPhrase');
-        const translationHintEl = document.getElementById('translationHint');
-        const optionsGridEl = document.getElementById('optionsGrid');
-        const nextBtn = document.getElementById('nextBtn');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const counterDisplay = document.getElementById('counterDisplay');
-        const finalScreen = document.getElementById('finalScreen');
-        const finalScoreEl = document.getElementById('finalScore');
-        const restartBtn = document.getElementById('restartBtn');
-        const gameUI = document.getElementById('gameUI');
+        const scoreVal = document.getElementById('score-val');
+        const timerVal = document.getElementById('timer-val');
+        const questionText = document.getElementById('question-text');
+        const audioBtn = document.getElementById('audio-btn');
+        const hud = document.getElementById('hud');
+        const questionPanel = document.getElementById('question-panel');
+        const bottomPanel = document.getElementById('bottom-panel');
+        const nextBtn = document.getElementById('next-btn');
+        const menuScreen = document.getElementById('menu-screen');
+        const endScreen = document.getElementById('end-screen');
+        const finalScore = document.getElementById('final-score');
+        const finalMsg = document.getElementById('final-msg');
 
-        // ---------- 3D СЦЕНА (Three.js) ----------
+        // ---------- 3D СЦЕНА ----------
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0f1e);
-        scene.fog = new THREE.Fog(0x0a0f1e, 5, 25);
+        scene.fog = new THREE.FogExp2(0x050a14, 0.03);
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 2, 12);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 10);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // Освещение
-        const ambientLight = new THREE.AmbientLight(0x404060);
+        // Свет
+        const ambientLight = new THREE.AmbientLight(0x404060, 1.5);
         scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xaaccff, 1.2);
-        dirLight.position.set(5, 12, 8);
-        dirLight.castShadow = true;
-        dirLight.receiveShadow = true;
+        
+        const dirLight = new THREE.DirectionalLight(0xaaccff, 2);
+        dirLight.position.set(5, 10, 7);
         scene.add(dirLight);
 
-        const fillLight = new THREE.PointLight(0x2a6df4, 1.5, 25);
-        fillLight.position.set(-4, 3, 6);
-        scene.add(fillLight);
-
-        const backLight = new THREE.PointLight(0xffaa55, 0.8, 30);
-        backLight.position.set(3, 1, -8);
+        const backLight = new THREE.PointLight(0x2a6df4, 3, 30);
+        backLight.position.set(-5, 0, -5);
         scene.add(backLight);
 
-        // Звёздное поле / частицы
-        const particlesGeo = new THREE.BufferGeometry();
-        const particlesCount = 1800;
-        const posArray = new Float32Array(particlesCount * 3);
-        for (let i = 0; i < particlesCount * 3; i += 3) {
-            posArray[i] = (Math.random() - 0.5) * 80;
-            posArray[i+1] = (Math.random() - 0.5) * 50;
-            posArray[i+2] = (Math.random() - 0.5) * 80 - 20;
-        }
-        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMat = new THREE.PointsMaterial({
-            color: 0x88bbff,
-            size: 0.15,
-            transparent: true,
-            opacity: 0.7,
-            blending: THREE.AdditiveBlending
-        });
-        const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
-        scene.add(particlesMesh);
-
-        // Центральный объект — светящийся кристалл (икосаэдр)
-        const crystalGeo = new THREE.IcosahedronGeometry(1.8, 0);
-        const crystalMat = new THREE.MeshStandardMaterial({
-            color: 0x3a7bd5,
-            emissive: 0x1a3a7a,
-            metalness: 0.3,
-            roughness: 0.25,
-            transparent: true,
-            opacity: 0.95,
+        // Центральный объект (тора-узел)
+        const coreGeo = new THREE.TorusKnotGeometry(1.5, 0.4, 100, 16);
+        const coreMat = new THREE.MeshStandardMaterial({
+            color: 0x2a6df4,
+            emissive: 0x103070,
+            roughness: 0.2,
+            metalness: 0.8,
             wireframe: false
         });
-        const crystal = new THREE.Mesh(crystalGeo, crystalMat);
-        crystal.castShadow = true;
-        crystal.receiveShadow = true;
-        crystal.position.y = 0.5;
-        scene.add(crystal);
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        scene.add(core);
 
-        // Внутренний каркас
-        const wireframeGeo = new THREE.IcosahedronGeometry(1.82, 0);
-        const wireframeMat = new THREE.MeshBasicMaterial({
-            color: 0x88ccff,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.25
-        });
-        const wireframe = new THREE.Mesh(wireframeGeo, wireframeMat);
-        wireframe.position.y = 0.5;
-        scene.add(wireframe);
+        // Звездное поле
+        const starsGeo = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starPos = new Float32Array(starCount * 3);
+        for(let i=0; i<starCount*3; i+=3) {
+            starPos[i] = (Math.random() - 0.5) * 60;
+            starPos[i+1] = (Math.random() - 0.5) * 60;
+            starPos[i+2] = (Math.random() - 0.5) * 60 - 10;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starsMat = new THREE.PointsMaterial({ color: 0x88bbff, size: 0.1, transparent: true, opacity: 0.8 });
+        const stars = new THREE.Points(starsGeo, starsMat);
+        scene.add(stars);
 
-        // Кольца вокруг кристалла
-        const ringGeo = new THREE.TorusGeometry(2.8, 0.03, 16, 100);
-        const ringMat = new THREE.MeshStandardMaterial({ color: 0x4a9eff, emissive: 0x1a4a9e });
-        const ring1 = new THREE.Mesh(ringGeo, ringMat);
-        ring1.rotation.x = Math.PI / 2;
-        ring1.rotation.z = 0.3;
-        ring1.position.y = 0.5;
-        scene.add(ring1);
-
-        const ring2 = new THREE.Mesh(ringGeo, ringMat);
-        ring2.rotation.x = Math.PI / 3;
-        ring2.rotation.z = -0.5;
-        ring2.position.y = 0.5;
-        scene.add(ring2);
-
-        const ring3 = new THREE.Mesh(ringGeo, ringMat);
-        ring3.rotation.x = Math.PI / 1.5;
-        ring3.rotation.z = 0.8;
-        ring3.position.y = 0.5;
-        scene.add(ring3);
-
-        // Плавающие маленькие сферы (декор)
-        const smallSpheres = [];
-        const sphereMat = new THREE.MeshStandardMaterial({ color: 0x7ab7ff, emissive: 0x2a5a9a });
-        for (let i = 0; i < 12; i++) {
-            const sGeo = new THREE.SphereGeometry(0.08 + Math.random() * 0.1, 8);
-            const sphere = new THREE.Mesh(sGeo, sphereMat);
-            const angle = (i / 12) * Math.PI * 2;
-            const radius = 3.8 + Math.random() * 1.5;
-            sphere.position.set(Math.cos(angle) * radius, 0.5 + Math.sin(i * 1.5) * 1.2, Math.sin(angle) * radius);
-            scene.add(sphere);
-            smallSpheres.push({ mesh: sphere, angle: angle, radius: radius, speed: 0.1 + Math.random() * 0.15, yOffset: Math.random() * 2 });
+        // Плавающие 3D-блоки (на фоне)
+        const bgCubes = [];
+        for(let i=0; i<8; i++) {
+            const size = 0.2 + Math.random() * 0.4;
+            const geo = new THREE.BoxGeometry(size, size, size);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x4a9eff, emissive: 0x1a3a7a, wireframe: Math.random() > 0.5 });
+            const cube = new THREE.Mesh(geo, mat);
+            cube.position.set((Math.random()-0.5)*20, (Math.random()-0.5)*15, (Math.random()-0.5)*10 - 5);
+            cube.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+            scene.add(cube);
+            bgCubes.push({ mesh: cube, speedX: (Math.random()-0.5)*0.01, speedY: (Math.random()-0.5)*0.01, speedZ: (Math.random()-0.5)*0.01 });
         }
 
-        // Плоскость-пол (отражающая)
-        const floorGeo = new THREE.CircleGeometry(16, 32);
-        const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x101a2e,
-            emissive: 0x0a1020,
-            roughness: 0.4,
-            metalness: 0.6,
-            transparent: true,
-            opacity: 0.7,
-            side: THREE.DoubleSide
-        });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -1.5;
-        floor.receiveShadow = true;
-        scene.add(floor);
-
-        // ---------- АУДИО (Web Audio API) ----------
+        // ---------- АУДИО И РЕЧЬ ----------
         let audioCtx = null;
         function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
-
-        function playTone(freq, type = 'sine', duration = 0.15, volume = 0.2) {
+        function playTone(freq, type, dur, vol) {
             try {
                 initAudio();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.value = freq;
-                gain.gain.value = volume;
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch (e) { /* аудио не критично */ }
+                osc.type = type; osc.frequency.value = freq;
+                gain.gain.value = vol;
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur);
+            } catch(e){}
         }
-
         function playCorrect() {
-            playTone(523.25, 'sine', 0.12, 0.15); // C5
-            setTimeout(() => playTone(659.25, 'sine', 0.12, 0.15), 100); // E5
-            setTimeout(() => playTone(783.99, 'sine', 0.2, 0.15), 200); // G5
+            playTone(523.25, 'sine', 0.1, 0.1);
+            setTimeout(() => playTone(659.25, 'sine', 0.1, 0.1), 80);
+            setTimeout(() => playTone(783.99, 'sine', 0.2, 0.1), 160);
         }
-
         function playWrong() {
-            playTone(220, 'sawtooth', 0.2, 0.12);
-            setTimeout(() => playTone(164.81, 'sawtooth', 0.25, 0.12), 120);
+            playTone(200, 'sawtooth', 0.2, 0.1);
+            setTimeout(() => playTone(150, 'sawtooth', 0.3, 0.1), 100);
         }
 
-        function playClick() {
-            playTone(800, 'square', 0.04, 0.06);
+        // Озвучка (Text-to-Speech)
+        let voices = [];
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+            if(voices.length === 0) setTimeout(loadVoices, 100);
+        }
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            window.speechSynthesis.onvoiceschanged = loadVoices;
         }
 
-        function playVictory() {
-            const notes = [523.25, 659.25, 783.99, 1046.5];
-            notes.forEach((f, i) => setTimeout(() => playTone(f, 'triangle', 0.3, 0.15), i * 120));
-        }
+        window.playAudio = function() {
+            if ('speechSynthesis' in window && questions[currentIndex]) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(questions[currentIndex].en);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                const voice = voices.find(v => v.lang.includes('en'));
+                if (voice) utterance.voice = voice;
+                window.speechSynthesis.speak(utterance);
+            }
+        };
 
         // ---------- ЛОГИКА ИГРЫ ----------
-        function shuffleArray(arr) {
-            const a = [...arr];
-            for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-            }
-            return a;
-        }
+        window.startGame = function(mode) {
+            initAudio();
+            currentMode = mode;
+            score = 0;
+            currentIndex = 0;
+            
+            // Перемешиваем и берем 10 случайных фраз
+            questions = [...LESSON].sort(() => 0.5 - Math.random()).slice(0, totalQuestions);
+            
+            scoreVal.textContent = '0';
+            menuScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            hud.style.display = 'flex';
+            questionPanel.style.display = 'block';
+            bottomPanel.style.display = 'none';
 
-        // Генерация вариантов ответа (1 правильный + 3 неправильных)
-        function generateOptions(question) {
-            const correct = question.correct;
-            const pool = LESSON.filter(q => q.correct !== correct).map(q => q.correct);
-            const shuffledPool = shuffleArray(pool);
-            const wrongOptions = shuffledPool.slice(0, 3);
-            const options = shuffleArray([correct, ...wrongOptions]);
-            return options;
+            if(mode === 'audio') {
+                audioBtn.style.display = 'inline-block';
+            } else {
+                audioBtn.style.display = 'none';
+            }
+
+            loadQuestion();
+        };
+
+        function generateOptions(q) {
+            // Выбираем правильный ответ и 3 неправильных
+            const isEnRu = (currentMode === 'en-ru');
+            const isRuEn = (currentMode === 'ru-en');
+            const isAudio = (currentMode === 'audio');
+            
+            let correctText = isEnRu ? q.ru : q.en;
+            if (isAudio) correctText = q.en; // В аудировании показываем английский текст
+
+            // Пул неправильных ответов
+            const pool = LESSON.filter(item => {
+                if (item.en === q.en) return false;
+                if (isEnRu) return item.ru !== q.ru;
+                return item.en !== q.en;
+            });
+            
+            const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
+            let wrongTexts = [];
+            
+            for (let i=0; i<3 && i<shuffledPool.length; i++) {
+                wrongTexts.push(isEnRu ? shuffledPool[i].ru : shuffledPool[i].en);
+            }
+            
+            // Если вдруг не хватило, берем любые другие
+            while(wrongTexts.length < 3) {
+                const fallback = LESSON[Math.floor(Math.random()*LESSON.length)];
+                const t = isEnRu ? fallback.ru : fallback.en;
+                if (t !== correctText && !wrongTexts.includes(t)) wrongTexts.push(t);
+            }
+
+            // Перемешиваем финальный список
+            const allOptions = [correctText, ...wrongTexts].sort(() => 0.5 - Math.random());
+            
+            return { options: allOptions, correctText };
         }
 
         function loadQuestion() {
-            if (currentIndex >= currentQuestions.length) {
+            if(currentIndex >= totalQuestions) {
                 endGame();
                 return;
             }
+            
+            canAnswer = true;
+            clearInterval(timer);
+            timeLeft = 45;
+            timerVal.textContent = timeLeft;
+            
+            // Запуск таймера
+            timer = setInterval(() => {
+                timeLeft--;
+                timerVal.textContent = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timer);
+                    if(canAnswer) timeOut();
+                }
+            }, 1000);
 
-            answered = false;
-            nextBtn.disabled = true;
-            const q = currentQuestions[currentIndex];
-            englishPhraseEl.textContent = q.en;
-            translationHintEl.textContent = q.ru;
-            counterDisplay.textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+            const q = questions[currentIndex];
+            
+            // Настройка текста вопроса
+            if (currentMode === 'en-ru') {
+                questionText.textContent = q.en;
+            } else if (currentMode === 'ru-en') {
+                questionText.textContent = q.ru;
+            } else if (currentMode === 'audio') {
+                questionText.textContent = '🔊 Слушай...';
+                setTimeout(playAudio, 500); // Автоматически проигрываем аудио
+            }
 
-            const options = generateOptions(q);
-            optionsGridEl.innerHTML = '';
+            // Генерация вариантов и создание 3D-кнопок
+            const { options, correctText } = generateOptions(q);
+            renderAnswerButtons(options, correctText);
+        }
 
-            options.forEach(optText => {
+        function renderAnswerButtons(options, correctText) {
+            // Удаляем старые кнопки
+            document.querySelectorAll('.answer-btn').forEach(b => b.remove());
+
+            // Позиции для 4 кнопок (крестом или ромбом)
+            // Координаты в процентах от окна. Центр экрана примерно 50%, 50%.
+            // Оставляем место для текста вопроса сверху.
+            const positions = [
+                { x: 25, y: 40 }, // Лево-верх
+                { x: 75, y: 40 }, // Право-верх
+                { x: 25, y: 70 }, // Лево-низ
+                { x: 75, y: 70 }  // Право-низ
+            ];
+            
+            // На мобильных (узкий экран) лучше ставить в колонку
+            const isMobile = window.innerWidth < 600;
+            if (isMobile) {
+                positions[0] = { x: 50, y: 35 };
+                positions[1] = { x: 50, y: 50 };
+                positions[2] = { x: 50, y: 65 };
+                positions[3] = { x: 50, y: 80 };
+            }
+
+            options.forEach((optText, i) => {
                 const btn = document.createElement('button');
-                btn.className = 'option-btn';
+                btn.className = 'answer-btn';
                 btn.textContent = optText;
-                btn.dataset.value = optText;
-                btn.addEventListener('click', () => handleAnswer(btn, q.correct, optText));
-                optionsGridEl.appendChild(btn);
+                
+                // Установка позиции
+                btn.style.left = positions[i].x + '%';
+                btn.style.top = positions[i].y + '%';
+                
+                // Добавляем 3D-эффект параллакса при движении мыши
+                btn.addEventListener('mousemove', (e) => {
+                    const rect = btn.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width/2;
+                    const y = e.clientY - rect.top - rect.height/2;
+                    btn.style.transform = `translate(-50%, -50%) rotateX(${-y*0.1}deg) rotateY(${x*0.1}deg) scale(1.05)`;
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'translate(-50%, -50%) rotateX(0) rotateY(0) scale(1)';
+                });
+                // Для мобильных просто уменьшаем при нажатии
+                btn.addEventListener('touchstart', () => {
+                    btn.style.transform = 'translate(-50%, -50%) scale(0.95)';
+                });
+                btn.addEventListener('touchend', () => {
+                    btn.style.transform = 'translate(-50%, -50%) scale(1)';
+                });
+
+                btn.onclick = () => handleAnswer(btn, optText, correctText);
+                document.body.appendChild(btn);
             });
         }
 
-        function handleAnswer(btn, correctText, selectedText) {
-            if (answered) return;
-            answered = true;
+        function handleAnswer(btn, selected, correct) {
+            if(!canAnswer) return;
+            canAnswer = false;
+            clearInterval(timer);
 
-            const allBtns = optionsGridEl.querySelectorAll('.option-btn');
-            allBtns.forEach(b => b.disabled = true);
-
-            const isCorrect = (selectedText === correctText);
-            if (isCorrect) {
+            const allBtns = document.querySelectorAll('.answer-btn');
+            
+            if (selected === correct) {
                 score++;
-                scoreDisplay.textContent = score;
+                scoreVal.textContent = score;
                 btn.classList.add('correct');
                 playCorrect();
             } else {
                 btn.classList.add('wrong');
                 playWrong();
-                // Показать правильный ответ
+                // Подсвечиваем правильный
                 allBtns.forEach(b => {
-                    if (b.dataset.value === correctText) {
-                        b.classList.add('correct');
-                    }
+                    if (b.textContent === correct) b.classList.add('correct');
                 });
             }
 
-            nextBtn.disabled = false;
+            // Блокируем остальные
+            allBtns.forEach(b => {
+                if (!b.classList.contains('correct') && !b.classList.contains('wrong')) {
+                    b.classList.add('disabled');
+                }
+            });
+
+            // Показываем кнопку "Далее"
+            bottomPanel.style.display = 'block';
+            if(currentIndex === totalQuestions - 1) {
+                nextBtn.textContent = 'Результаты 🏁';
+            } else {
+                nextBtn.textContent = 'Далее ➔';
+            }
         }
 
-        function nextQuestion() {
-            playClick();
+        function timeOut() {
+            canAnswer = false;
+            playWrong();
+            const allBtns = document.querySelectorAll('.answer-btn');
+            allBtns.forEach(b => {
+                b.classList.add('disabled');
+            });
+            bottomPanel.style.display = 'block';
+            if(currentIndex === totalQuestions - 1) {
+                nextBtn.textContent = 'Результаты 🏁';
+            } else {
+                nextBtn.textContent = 'Далее ➔';
+            }
+        }
+
+        window.nextQuestion = function() {
             currentIndex++;
-            if (currentIndex < currentQuestions.length) {
+            bottomPanel.style.display = 'none';
+            if(currentIndex < totalQuestions) {
                 loadQuestion();
             } else {
                 endGame();
             }
-        }
+        };
 
         function endGame() {
-            playVictory();
-            gameUI.style.display = 'none';
-            finalScreen.style.display = 'flex';
-            finalScoreEl.textContent = score;
+            hud.style.display = 'none';
+            questionPanel.style.display = 'none';
+            bottomPanel.style.display = 'none';
+            document.querySelectorAll('.answer-btn').forEach(b => b.remove());
+            
+            endScreen.classList.remove('hidden');
+            finalScore.textContent = score;
+            
+            if (score === 10) finalMsg.textContent = "Идеально! 🏆 Ты знаешь урок 7.1 наизусть!";
+            else if (score >= 8) finalMsg.textContent = "Отлично! 🌟 Почти безупречно.";
+            else if (score >= 5) finalMsg.textContent = "Хорошо! 👍 Но есть куда расти.";
+            else finalMsg.textContent = "Нужно повторить материал. 📚 Попробуй еще раз!";
         }
-
-        function startGame() {
-            // Перемешиваем вопросы
-            currentQuestions = shuffleArray(LESSON);
-            currentIndex = 0;
-            score = 0;
-            totalQuestions = currentQuestions.length;
-            scoreDisplay.textContent = '0';
-            finalScreen.style.display = 'none';
-            gameUI.style.display = 'flex';
-            loadQuestion();
-        }
-
-        nextBtn.addEventListener('click', nextQuestion);
-        restartBtn.addEventListener('click', () => {
-            playClick();
-            startGame();
-        });
-
-        // Инициализация первой игры после загрузки
-        startGame();
 
         // ---------- АНИМАЦИЯ 3D ----------
-        let clock = new THREE.Clock();
-
+        const clock = new THREE.Clock();
         function animate() {
-            const delta = clock.getDelta();
             const elapsed = performance.now() * 0.001;
+            
+            // Вращение центрального узла
+            core.rotation.x += 0.005;
+            core.rotation.y += 0.01;
+            
+            // Пульсация
+            const s = 1 + Math.sin(elapsed * 2) * 0.05;
+            core.scale.set(s, s, s);
 
-            // Вращение кристалла
-            crystal.rotation.x += 0.002;
-            crystal.rotation.y += 0.004;
-            wireframe.rotation.x = crystal.rotation.x;
-            wireframe.rotation.y = crystal.rotation.y;
-
-            // Кольца
-            ring1.rotation.z += 0.003;
-            ring2.rotation.x += 0.002;
-            ring2.rotation.z += 0.001;
-            ring3.rotation.y += 0.004;
-            ring3.rotation.x += 0.001;
-
-            // Плавающие сферы
-            smallSpheres.forEach(s => {
-                s.angle += 0.002 * s.speed * 10;
-                s.mesh.position.x = Math.cos(s.angle) * s.radius;
-                s.mesh.position.z = Math.sin(s.angle) * s.radius;
-                s.mesh.position.y = 0.5 + Math.sin(elapsed * 0.8 + s.yOffset) * 1.5;
+            // Движение фоновых кубов
+            bgCubes.forEach(c => {
+                c.mesh.rotation.x += c.speedX;
+                c.mesh.rotation.y += c.speedY;
+                c.mesh.rotation.z += c.speedZ;
+                c.mesh.position.y += Math.sin(elapsed + c.mesh.position.x) * 0.005;
             });
 
-            // Пульсация кристалла
-            const scale = 1 + Math.sin(elapsed * 2) * 0.02;
-            crystal.scale.set(scale, scale, scale);
-
-            // Камера лёгкое покачивание
-            camera.position.x = Math.sin(elapsed * 0.15) * 0.8;
-            camera.position.y = 2 + Math.sin(elapsed * 0.2) * 0.3;
-            camera.lookAt(0, 0.5, 0);
-
-            // Частицы
-            particlesMesh.rotation.y += 0.0002;
-            particlesMesh.rotation.x += 0.0001;
+            // Вращение звезд
+            stars.rotation.y += 0.0005;
 
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
         }
-
         animate();
 
-        // ---------- РЕСАЙЗ ----------
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Разблокировка аудио по первому клику
+        // Аудио разблокировка
         document.body.addEventListener('click', initAudio, { once: true });
         document.body.addEventListener('touchstart', initAudio, { once: true });
+
     </script>
 </body>
 </html>
