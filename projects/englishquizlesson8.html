@@ -5,493 +5,333 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>3D Present Simple — Negative</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; overflow: hidden;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: #050510;
-    touch-action: manipulation;
-    -webkit-user-select: none; user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #info { position: absolute; top: 10px; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
-  #info h1 {
-    font-size: clamp(1rem, 4vw, 1.6rem); margin: 0; font-weight: 800; letter-spacing: 2px;
-    background: linear-gradient(135deg, #a0e9ff, #6b8cff, #ff7df9);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 12px #3a6eff);
-  }
-  #info p { font-size: clamp(0.7rem, 2.5vw, 0.85rem); margin: 3px 0 0; color: #88aadd; letter-spacing: 1px; }
-  #top-bar { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; z-index: 20; pointer-events: none; }
-  #restart-btn {
-    background: rgba(10,20,40,0.8); border: 1.5px solid #4a8eff; border-radius: 30px;
-    color: #c0e0ff; padding: 8px 14px; font-size: clamp(0.7rem,2.5vw,0.9rem); font-weight: 700;
-    cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 0 20px rgba(0,150,255,0.4);
-    pointer-events: auto; -webkit-tap-highlight-color: transparent;
-  }
-  #score-board {
-    background: rgba(10,20,40,0.8); backdrop-filter: blur(8px); border-radius: 30px;
-    padding: 8px 18px; border: 1.5px solid #4a8eff; color: #b8e2ff;
-    font-size: clamp(0.75rem,2.5vw,1rem); font-weight: 700;
-    box-shadow: 0 0 20px rgba(0,150,255,0.4); pointer-events: auto;
-  }
-  #score-board span { color: #7df9ff; font-size: 1.3em; }
-  #mode-panel {
-    position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 6px; z-index: 20; background: rgba(5,10,25,0.7);
-    backdrop-filter: blur(10px); padding: 6px; border-radius: 40px;
-    border: 1px solid #2a5a9a; box-shadow: 0 0 25px rgba(0,100,255,0.3); pointer-events: auto;
-  }
-  .mode-btn {
-    background: transparent; border: none; color: #7aaadd; padding: 7px 12px;
-    border-radius: 30px; font-size: clamp(0.6rem,2.2vw,0.85rem); font-weight: 700;
-    cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
-  }
-  .mode-btn.active { background: linear-gradient(135deg,#3a6eff,#7a3eff); color: #fff; box-shadow: 0 0 20px #4a7eff; }
-  #ui {
-    position: absolute; bottom: 15px; left: 0; width: 100%;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    z-index: 20; padding: 0 12px; pointer-events: none;
-  }
-  #question-box {
-    background: rgba(8,16,35,0.85); backdrop-filter: blur(12px);
-    border: 1.5px solid rgba(100,180,255,0.7); border-radius: 25px;
-    padding: 12px 20px; box-shadow: 0 0 35px rgba(0,150,255,0.45);
-    text-align: center; max-width: 92%; pointer-events: auto; position: relative;
-  }
-  #question-text { color: #fff; font-size: clamp(0.9rem,3.5vw,1.3rem); font-weight: 500; margin: 0; line-height: 1.4; }
-  #question-text .affirm { color: #ffd97d; font-weight: 700; }
-  #question-text .label { color: #7aaadd; font-size: 0.75em; display: block; margin-bottom: 4px; letter-spacing: 1px; }
-  #speak-btn {
-    position: absolute; top: -12px; right: 12px;
-    background: linear-gradient(135deg,#2a6eff,#7a3eff); border: 2px solid #a0c8ff;
-    border-radius: 50%; width: 34px; height: 34px; font-size: 16px; cursor: pointer; color: #fff;
-    box-shadow: 0 0 18px #4a7eff; -webkit-tap-highlight-color: transparent;
-    display: flex; align-items: center; justify-content: center;
-  }
-  #options-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 96%; pointer-events: auto; }
-  .option-btn {
-    background: rgba(15,25,55,0.9); backdrop-filter: blur(6px); border: 2px solid #4a6eff;
-    border-radius: 30px; color: #fff; padding: 11px 18px;
-    font-size: clamp(0.8rem,3vw,1rem); font-weight: 600; cursor: pointer;
-    box-shadow: 0 0 15px rgba(60,120,255,0.5); -webkit-tap-highlight-color: transparent; max-width: 90vw;
-  }
-  .option-btn.correct { background: linear-gradient(135deg,#00c86b,#00ff9d); border-color: #a0ffc0; box-shadow: 0 0 35px #00ff88; }
-  .option-btn.wrong { background: linear-gradient(135deg,#c83030,#ff3a5a); border-color: #ff8080; box-shadow: 0 0 35px #ff3a3a; }
-  .option-btn.disabled { pointer-events: none; opacity: 0.55; }
-  #feedback {
-    position: absolute; top: 45%; left: 50%; transform: translate(-50%,-50%);
-    font-size: clamp(2.5rem,12vw,5rem); font-weight: 900; z-index: 30;
-    pointer-events: none; opacity: 0; transition: opacity 0.3s;
-  }
-  #combo {
-    position: absolute; top: 125px; left: 50%; transform: translateX(-50%);
-    color: #ffd97d; font-weight: 800; font-size: clamp(0.9rem,3.5vw,1.3rem);
-    text-shadow: 0 0 20px #ff9d00; z-index: 15; opacity: 0; transition: opacity 0.3s;
-    pointer-events: none; letter-spacing: 2px;
-  }
-  #combo.show { opacity: 1; }
-  @media (max-width: 500px) {
-    #mode-panel { top: 62px; gap: 3px; padding: 4px; }
-    .mode-btn { padding: 5px 8px; }
-    #question-box { padding: 10px 14px; }
-    .option-btn { padding: 9px 13px; }
-  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;overflow:hidden;background:#050510;color:#fff;
+    font-family:-apple-system,'Segoe UI',system-ui,sans-serif;height:100%;width:100%;
+    touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  #c{position:fixed;inset:0;z-index:0}
+  #ui{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+    justify-content:space-between;pointer-events:none}
+  .row{display:flex;justify-content:space-between;padding:10px;gap:8px}
+  .pill{pointer-events:auto;background:rgba(10,20,40,.85);border:1.5px solid #4a8eff;
+    border-radius:30px;color:#c0e0ff;padding:8px 14px;font-weight:700;
+    font-size:clamp(.7rem,2.6vw,.9rem);box-shadow:0 0 18px rgba(0,150,255,.4)}
+  #restart{cursor:pointer}
+  #score span{color:#7df9ff;font-size:1.3em}
+  #modes{align-self:center;display:flex;gap:4px;background:rgba(5,10,25,.8);
+    padding:5px;border-radius:40px;border:1px solid #2a5a9a;pointer-events:auto}
+  .mode{background:transparent;border:none;color:#7aaadd;padding:7px 10px;
+    border-radius:30px;font-size:clamp(.6rem,2.3vw,.82rem);font-weight:700;cursor:pointer}
+  .mode.active{background:linear-gradient(135deg,#3a6eff,#7a3eff);color:#fff}
+  #combo{align-self:center;color:#ffd97d;font-weight:800;font-size:clamp(.85rem,3.4vw,1.2rem);
+    text-shadow:0 0 16px #ff9d00;opacity:0;transition:opacity .3s;letter-spacing:2px}
+  #combo.show{opacity:1}
+  #bottom{display:flex;flex-direction:column;align-items:center;gap:9px;padding:0 10px 12px}
+  #qbox{position:relative;pointer-events:auto;background:rgba(8,16,35,.9);
+    border:1.5px solid rgba(100,180,255,.75);border-radius:22px;padding:12px 18px;
+    text-align:center;box-shadow:0 0 30px rgba(0,150,255,.45);max-width:94vw}
+  #qtext{margin:0;font-size:clamp(.85rem,3.6vw,1.2rem);line-height:1.4}
+  #qtext .lbl{color:#7aaadd;font-size:.7em;display:block;margin-bottom:4px;letter-spacing:1px}
+  #qtext .aff{color:#ffd97d;font-weight:700}
+  #speak{position:absolute;top:-12px;right:10px;background:linear-gradient(135deg,#2a6eff,#7a3eff);
+    border:2px solid #a0c8ff;border-radius:50%;width:34px;height:34px;font-size:15px;
+    cursor:pointer;color:#fff;box-shadow:0 0 16px #4a7eff}
+  #opts{pointer-events:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:96vw}
+  .opt{background:rgba(15,25,55,.92);border:2px solid #4a6eff;border-radius:26px;color:#fff;
+    padding:11px 16px;font-size:clamp(.78rem,3.2vw,.98rem);font-weight:600;cursor:pointer;
+    box-shadow:0 0 14px rgba(60,120,255,.5);max-width:92vw}
+  .opt.correct{background:linear-gradient(135deg,#00c86b,#00ff9d);border-color:#a0ffc0}
+  .opt.wrong{background:linear-gradient(135deg,#c83030,#ff3a5a);border-color:#ff8080}
+  .opt.disabled{pointer-events:none;opacity:.55}
+  #fb{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);
+    font-size:clamp(2.4rem,12vw,5rem);font-weight:900;z-index:30;pointer-events:none;
+    opacity:0;transition:opacity .3s}
+  #warn{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#ffb0b0;
+    font-size:.85rem;text-align:center;z-index:5;display:none;padding:20px}
 </style>
 </head>
 <body>
-  <div id="info">
-    <h1>PRESENT SIMPLE · NEGATIVE</h1>
-    <p>I/We/You/They + don't · He/She/It + doesn't</p>
+<div id="c"></div>
+<div id="warn">3D не загрузилось, но игра работает</div>
+<div id="ui">
+  <div class="row">
+    <button class="pill" id="restart">⟳ ЗАНОВО</button>
+    <div class="pill" id="score">СЧЁТ <span id="sv">0</span></div>
   </div>
-  <div id="top-bar">
-    <button id="restart-btn">⟳ ЗАНОВО</button>
-    <div id="score-board">СЧЁТ <span id="score-value">0</span></div>
-  </div>
-  <div id="mode-panel">
-    <button class="mode-btn active" data-mode="mixed">🌌 Смешанный</button>
-    <button class="mode-btn" data-mode="others">🌍 They</button>
-    <button class="mode-btn" data-mode="third">🔥 He/She/It</button>
+  <div id="modes">
+    <button class="mode active" data-m="mixed">🌌 Все</button>
+    <button class="mode" data-m="others">🌍 They</button>
+    <button class="mode" data-m="third">🔥 He/She/It</button>
   </div>
   <div id="combo"></div>
-  <div id="feedback"></div>
-  <div id="ui">
-    <div id="question-box">
-      <button id="speak-btn" title="Прослушать">🔊</button>
-      <p id="question-text">Загрузка...</p>
+  <div id="bottom">
+    <div id="qbox">
+      <button id="speak">🔊</button>
+      <p id="qtext">Загрузка...</p>
     </div>
-    <div id="options-container"></div>
+    <div id="opts"></div>
   </div>
+</div>
+<div id="fb"></div>
 
-  <script type="importmap">
-  { "imports": { "three": "https://unpkg.com/three@0.128.0/build/three.module.js" } }
-  </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+if (typeof THREE === 'undefined') {
+  document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');
+}
+</script>
+<script>
+(function(){
+'use strict';
 
-  <script type="module">
-  import * as THREE from 'three';
+/* ---------- АУДИО ---------- */
+var ac=null;
+function initAudio(){try{if(!ac){var C=window.AudioContext||window.webkitAudioContext;if(!C)return;ac=new C();}if(ac.state==='suspended')ac.resume();}catch(e){}}
+function tone(f,d,ty,v,dl){ty=ty||'sine';v=v||.22;dl=dl||0;if(!ac)return;
+  try{var t0=ac.currentTime+dl,o=ac.createOscillator(),g=ac.createGain();
+    o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,t0);
+    g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(ac.destination);
+    o.start(t0);o.stop(t0+d);}catch(e){}}
+function sfxOk(){initAudio();tone(660,.1,'sine',.22,0);tone(880,.1,'sine',.22,.08);tone(1180,.18,'sine',.2,.16);}
+function sfxNo(){initAudio();tone(200,.18,'sawtooth',.2,0);tone(140,.25,'sawtooth',.18,.12);}
+function sfxTap(){initAudio();tone(700,.04,'square',.08);}
 
-  // ===== АУДИО =====
-  let audioCtx = null;
-  function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-  }
-  function tone(freq, dur, type='sine', vol=0.25, delay=0) {
-    if (!audioCtx) return;
-    try {
-      const t0 = audioCtx.currentTime + delay;
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-      o.type = type; o.frequency.value = freq;
-      g.gain.setValueAtTime(vol, t0);
-      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(t0); o.stop(t0 + dur);
-    } catch(e) {}
-  }
-  const sfxCorrect = () => { initAudio(); tone(660,0.1,'sine',0.22,0); tone(880,0.1,'sine',0.22,0.08); tone(1180,0.18,'sine',0.2,0.16); };
-  const sfxWrong = () => { initAudio(); tone(200,0.18,'sawtooth',0.2,0); tone(140,0.25,'sawtooth',0.18,0.12); };
-  const sfxClick = () => { initAudio(); tone(700,0.04,'square',0.08); };
+/* ---------- ОЗВУЧКА ---------- */
+var synth=window.speechSynthesis||null,voices=[];
+function loadV(){try{voices=synth?synth.getVoices():[];}catch(e){voices=[];}}
+if(synth){loadV();if(synth.onvoiceschanged!==undefined)synth.onvoiceschanged=loadV;}
+function speak(txt){if(!synth)return;
+  try{synth.cancel();var u=new SpeechSynthesisUtterance(txt);
+    u.lang='en-US';u.rate=.85;u.pitch=1.05;
+    for(var i=0;i<voices.length;i++){if(voices[i].lang&&voices[i].lang.indexOf('en')===0){u.voice=voices[i];break;}}
+    synth.speak(u);}catch(e){}}
 
-  // ===== ОЗВУЧКА =====
-  const synth = window.speechSynthesis;
-  let voices = [];
-  function loadVoices() { voices = synth.getVoices(); }
-  loadVoices();
-  if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
-  function speak(text) {
-    if (!synth) return;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1.05;
-    const v = voices.find(x => x.lang && x.lang.startsWith('en'));
-    if (v) u.voice = v;
-    synth.speak(u);
-  }
+/* ---------- ДАННЫЕ ---------- */
+var data=[
+  ["I know","I don't know"],
+  ["We understand","We don't understand"],
+  ["You try to learn English","You don't try to learn English"],
+  ["They help me","They don't help me"],
+  ["I agree with you","I don't agree with you"],
+  ["I like it","I don't like it"],
+  ["I want to study there","I don't want to study there"],
+  ["I want to discuss it","I don't want to discuss it"],
+  ["I want to do it right now","I don't want to do it right now"],
+  ["I want to do it later","I don't want to do it later"],
+  ["I want to say it","I don't want to say it"],
+  ["I want to tell you thing","I don't want to tell you thing"],
+  ["I want to tell you about problem","I don't want to tell you about problem"],
+  ["I want to think about it","I don't want to think about it"],
+  ["He knows it","He doesn't know it"],
+  ["She wants to discuss it","She doesn't want to discuss it"],
+  ["It helps me","It doesn't help me"],
+  ["It seems strange","It doesn't seem strange"],
+  ["It works","It doesn't work"]
+];
 
-  // ===== ДАННЫЕ =====
-  const lessonData = [
-    { affirmative: "I know", negative: "I don't know" },
-    { affirmative: "We understand", negative: "We don't understand" },
-    { affirmative: "You try to learn English", negative: "You don't try to learn English" },
-    { affirmative: "They help me", negative: "They don't help me" },
-    { affirmative: "I agree with you", negative: "I don't agree with you" },
-    { affirmative: "I like it", negative: "I don't like it" },
-    { affirmative: "I want to study there", negative: "I don't want to study there" },
-    { affirmative: "I want to discuss it", negative: "I don't want to discuss it" },
-    { affirmative: "I want to do it right now", negative: "I don't want to do it right now" },
-    { affirmative: "I want to do it later", negative: "I don't want to do it later" },
-    { affirmative: "I want to say it", negative: "I don't want to say it" },
-    { affirmative: "I want to tell you thing", negative: "I don't want to tell you thing" },
-    { affirmative: "I want to tell you about problem", negative: "I don't want to tell you about problem" },
-    { affirmative: "I want to think about it", negative: "I don't want to think about it" },
-    { affirmative: "He knows it", negative: "He doesn't know it" },
-    { affirmative: "She wants to discuss it", negative: "She doesn't want to discuss it" },
-    { affirmative: "It helps me", negative: "It doesn't help me" },
-    { affirmative: "It seems strange", negative: "It doesn't seem strange" },
-    { affirmative: "It works", negative: "It doesn't work" }
-  ];
+function makeOpts(correct,aff){
+  var o=[correct],l=aff.toLowerCase(),third=/^(he|she|it) /.test(l);
+  if(third){var w=correct.replace(/doesn't/i,"don't");if(w!==correct)o.push(w);}
+  else{var w2=correct.replace(/don't/i,"doesn't");if(w2!==correct)o.push(w2);}
+  if(o.length<3){var w3=correct.replace(/don't |doesn't /i,"");if(w3!==correct&&o.indexOf(w3)===-1)o.push(w3);}
+  if(o.length<3)o.push(aff);
+  for(var i=o.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=o[i];o[i]=o[j];o[j]=tmp;}
+  return o.slice(0,3);
+}
 
-  function generateOptions(correctNeg, affirmative) {
-    const opts = [correctNeg];
-    const l = affirmative.toLowerCase();
-    const isThird = /^(he|she|it) /.test(l);
-    if (isThird) {
-      const w = correctNeg.replace(/doesn't/i, "don't");
-      if (w !== correctNeg) opts.push(w);
-    } else {
-      const w = correctNeg.replace(/don't/i, "doesn't");
-      if (w !== correctNeg) opts.push(w);
+/* ---------- 3D ---------- */
+var scene,cam,renderer,crystal,inner,rings=[],sparks,group3,groupO,has3D=false,t=0;
+function init3D(){
+  if(typeof THREE==='undefined'){document.getElementById('warn').style.display='block';return;}
+  try{
+    scene=new THREE.Scene();scene.background=new THREE.Color(0x050510);
+    scene.fog=new THREE.FogExp2(0x050510,.015);
+    cam=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,200);
+    cam.position.set(0,4.5,13);cam.lookAt(0,2,0);
+    renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(innerWidth,innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+    document.getElementById('c').appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0x304060,.6));
+    var k=new THREE.DirectionalLight(0xffffff,1.4);k.position.set(6,12,8);scene.add(k);
+    var p1=new THREE.PointLight(0x3a8eff,2.2,20);p1.position.set(-6,5,6);scene.add(p1);
+    var p2=new THREE.PointLight(0xff3a9e,1.6,20);p2.position.set(6,4,6);scene.add(p2);
+
+    var ground=new THREE.Mesh(
+      new THREE.CylinderGeometry(9,9.5,.5,48),
+      new THREE.MeshStandardMaterial({color:0x0e1a33,emissive:0x0a1430,roughness:.35,metalness:.85}));
+    ground.position.y=-.25;scene.add(ground);
+
+    function ring(r,col,tube){
+      var m=new THREE.Mesh(new THREE.TorusGeometry(r,tube||.06,10,80),
+        new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:1.6,metalness:.9}));
+      m.rotation.x=Math.PI/2;m.position.y=.02;return m;
     }
-    if (opts.length < 3) {
-      const w = correctNeg.replace(/don't |doesn't /i, "");
-      if (w !== correctNeg && !opts.includes(w)) opts.push(w);
+    scene.add(ring(7,0x3a8eff));scene.add(ring(5.5,0xff3a9e,.04));
+
+    var g=new THREE.Group();g.position.y=3.2;scene.add(g);
+    crystal=new THREE.Mesh(new THREE.OctahedronGeometry(1.4,0),
+      new THREE.MeshStandardMaterial({color:0x4a8eff,emissive:0x1a3a8a,roughness:.15,metalness:.9,transparent:true,opacity:.92}));
+    g.add(crystal);
+    inner=new THREE.Mesh(new THREE.OctahedronGeometry(.85,0),
+      new THREE.MeshStandardMaterial({color:0xffffff,emissive:0x88aaff,emissiveIntensity:3,transparent:true,opacity:.75}));
+    crystal.add(inner);
+
+    var cols=[0x7df9ff,0xff7df9,0x9dff7d];
+    for(var i=0;i<3;i++){
+      var rm=new THREE.Mesh(new THREE.TorusGeometry(2.1+i*.35,.04,10,70),
+        new THREE.MeshStandardMaterial({color:cols[i],emissive:cols[i],emissiveIntensity:1.8,metalness:.9}));
+      rm.rotation.x=Math.PI/2+i*.4;rm.rotation.z=i*.7;g.add(rm);
+      rings.push({m:rm,s:.4+i*.25});
     }
-    if (opts.length < 3) opts.push(affirmative);
-    for (let i = opts.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [opts[i], opts[j]] = [opts[j], opts[i]];
+    var sc=400,sg=new THREE.BufferGeometry(),sp=new Float32Array(sc*3);
+    for(var s2=0;s2<sc*3;s2++)sp[s2]=(Math.random()-.5)*30;
+    sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+    sparks=new THREE.Points(sg,new THREE.PointsMaterial({size:.1,color:0x88aaff,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));
+    scene.add(sparks);
+
+    group3=new THREE.Group();group3.visible=false;
+    for(var a=0;a<6;a++){
+      var m3=new THREE.Mesh(new THREE.IcosahedronGeometry(.5,0),
+        new THREE.MeshStandardMaterial({color:0xff6a3a,emissive:0xff3a1a,emissiveIntensity:1.2,metalness:.7}));
+      var an=(a/6)*Math.PI*2;m3.position.set(Math.cos(an)*5,1.5+Math.sin(a)*.8,Math.sin(an)*5);
+      group3.add(m3);
     }
-    return opts.slice(0, 3);
-  }
+    scene.add(group3);
 
-  // ===== 3D СЦЕНА =====
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050510);
-  scene.fog = new THREE.FogExp2(0x050510, 0.015);
-
-  const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 200);
-  camera.position.set(0, 4.5, 13);
-  camera.lookAt(0, 2, 0);
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  document.body.appendChild(renderer.domElement);
-
-  scene.add(new THREE.AmbientLight(0x304060, 0.6));
-  const key = new THREE.DirectionalLight(0xffffff, 1.4);
-  key.position.set(6, 12, 8);
-  key.castShadow = true;
-  scene.add(key);
-
-  const r1 = new THREE.PointLight(0x3a8eff, 2.2, 20); r1.position.set(-6, 5, 6); scene.add(r1);
-  const r2 = new THREE.PointLight(0xff3a9e, 1.6, 20); r2.position.set(6, 4, 6); scene.add(r2);
-  const r3 = new THREE.PointLight(0x7dff9e, 1.0, 25); r3.position.set(0, 8, -6); scene.add(r3);
-
-  // Платформа
-  const ground = new THREE.Mesh(
-    new THREE.CylinderGeometry(9, 9.5, 0.5, 64),
-    new THREE.MeshStandardMaterial({ color: 0x0e1a33, emissive: 0x0a1430, roughness: 0.35, metalness: 0.85 })
-  );
-  ground.position.y = -0.25;
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  function floorRing(radius, color, tube=0.06) {
-    const m = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, tube, 12, 100),
-      new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.6, metalness: 0.9 })
-    );
-    m.rotation.x = Math.PI / 2;
-    m.position.y = 0.02;
-    return m;
-  }
-  scene.add(floorRing(7, 0x3a8eff));
-  scene.add(floorRing(5.5, 0xff3a9e, 0.04));
-
-  // Кристалл
-  const crystalGroup = new THREE.Group();
-  crystalGroup.position.y = 3.2;
-  scene.add(crystalGroup);
-
-  const crystal = new THREE.Mesh(
-    new THREE.OctahedronGeometry(1.4, 0),
-    new THREE.MeshStandardMaterial({ color: 0x4a8eff, emissive: 0x1a3a8a, roughness: 0.15, metalness: 0.9, transparent: true, opacity: 0.92 })
-  );
-  crystal.castShadow = true;
-  crystalGroup.add(crystal);
-
-  const innerCrystal = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.85, 0),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x88aaff, emissiveIntensity: 3, transparent: true, opacity: 0.75 })
-  );
-  crystal.add(innerCrystal);
-
-  // Кольца
-  const orbitRings = [];
-  [0x7df9ff, 0xff7df9, 0x9dff7d].forEach((c, i) => {
-    const mesh = new THREE.Mesh(
-      new THREE.TorusGeometry(2.1 + i * 0.35, 0.04, 12, 90),
-      new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 1.8, metalness: 0.9 })
-    );
-    mesh.rotation.x = Math.PI / 2 + i * 0.4;
-    mesh.rotation.z = i * 0.7;
-    crystalGroup.add(mesh);
-    orbitRings.push({ mesh, sp: 0.4 + i * 0.25, axis: i });
-  });
-
-  // Частицы
-  const sparkCount = 500;
-  const sparkGeo = new THREE.BufferGeometry();
-  const sparkPos = new Float32Array(sparkCount * 3);
-  for (let i = 0; i < sparkCount * 3; i++) sparkPos[i] = (Math.random() - 0.5) * 30;
-  sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
-  const sparks = new THREE.Points(sparkGeo, new THREE.PointsMaterial({
-    size: 0.1, color: 0x88aaff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
-  }));
-  scene.add(sparks);
-
-  // Фоновые объекты режимов
-  const thirdGroup = new THREE.Group(); thirdGroup.visible = false;
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.5, 0),
-      new THREE.MeshStandardMaterial({ color: 0xff6a3a, emissive: 0xff3a1a, emissiveIntensity: 1.2, metalness: 0.7 })
-    );
-    const a = (i / 6) * Math.PI * 2;
-    m.position.set(Math.cos(a) * 5, 1.5 + Math.sin(i) * 0.8, Math.sin(a) * 5);
-    thirdGroup.add(m);
-  }
-  scene.add(thirdGroup);
-
-  const othersGroup = new THREE.Group(); othersGroup.visible = false;
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(
-      new THREE.TetrahedronGeometry(0.6, 0),
-      new THREE.MeshStandardMaterial({ color: 0x3aff9d, emissive: 0x1aff7a, emissiveIntensity: 1.2, metalness: 0.7 })
-    );
-    const a = (i / 6) * Math.PI * 2 + 0.5;
-    m.position.set(Math.cos(a) * 5.5, 1.8 + Math.cos(i) * 0.7, Math.sin(a) * 5.5);
-    othersGroup.add(m);
-  }
-  scene.add(othersGroup);
-
-  // ===== ЛОГИКА =====
-  let currentQ = null;
-  let score = 0;
-  let combo = 0;
-  let mode = 'mixed';
-  const used = { mixed: [], others: [], third: [] };
-
-  const qText = document.getElementById('question-text');
-  const optsBox = document.getElementById('options-container');
-  const scoreEl = document.getElementById('score-value');
-  const feedbackEl = document.getElementById('feedback');
-  const comboEl = document.getElementById('combo');
-
-  function showFeedback(txt, color) {
-    feedbackEl.textContent = txt;
-    feedbackEl.style.color = color;
-    feedbackEl.style.opacity = 1;
-    clearTimeout(feedbackEl._t);
-    feedbackEl._t = setTimeout(() => feedbackEl.style.opacity = 0, 700);
-  }
-
-  function updateCombo() {
-    if (combo >= 2) {
-      comboEl.textContent = `🔥 СЕРИЯ x${combo}`;
-      comboEl.classList.add('show');
-    } else {
-      comboEl.classList.remove('show');
+    groupO=new THREE.Group();groupO.visible=false;
+    for(var b=0;b<6;b++){
+      var mo=new THREE.Mesh(new THREE.TetrahedronGeometry(.6,0),
+        new THREE.MeshStandardMaterial({color:0x3aff9d,emissive:0x1aff7a,emissiveIntensity:1.2,metalness:.7}));
+      var bo=(b/6)*Math.PI*2+.5;mo.position.set(Math.cos(bo)*5.5,1.8+Math.cos(b)*.7,Math.sin(bo)*5.5);
+      groupO.add(mo);
     }
-  }
+    scene.add(groupO);
 
-  function pickQuestion() {
-    let pool = lessonData;
-    if (mode === 'third') pool = lessonData.filter(q => /^(he|she|it) /i.test(q.affirmative));
-    else if (mode === 'others') pool = lessonData.filter(q => /^(i|we|you|they) /i.test(q.affirmative));
-    const u = used[mode];
-    let avail = pool.map((_, i) => i).filter(i => !u.includes(i));
-    if (avail.length === 0) { used[mode] = []; avail = pool.map((_, i) => i); }
-    const idx = avail[Math.floor(Math.random() * avail.length)];
-    used[mode].push(idx);
-    return pool[idx];
-  }
+    addEventListener('resize',function(){
+      cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);
+    });
+    has3D=true;animate();
+  }catch(e){document.getElementById('warn').style.display='block';}
+}
 
-  function loadQuestion() {
-    const q = pickQuestion();
-    currentQ = q;
-    qText.innerHTML = `<span class="label">УТВЕРЖДЕНИЕ</span><span class="affirm">${q.affirmative}</span>`;
-    optsBox.innerHTML = '';
-    generateOptions(q.negative, q.affirmative).forEach(opt => {
-      const b = document.createElement('button');
-      b.className = 'option-btn';
-      b.textContent = opt;
-      b.dataset.value = opt;
-      b.addEventListener('click', () => handleAnswer(opt, q.negative, b));
+function animate(){
+  if(!has3D)return;
+  requestAnimationFrame(animate);
+  t+=.016;
+  try{
+    crystal.rotation.y+=.005;crystal.rotation.x=Math.sin(t*.5)*.1;
+    inner.rotation.y-=.01;
+    for(var i=0;i<rings.length;i++)rings[i].m.rotation.z+=.003*rings[i].s;
+    if(group3)group3.rotation.y+=.003;
+    if(groupO)groupO.rotation.y-=.004;
+    sparks.rotation.y+=.0005;
+    cam.position.x=Math.sin(t*.2)*.5;
+    cam.position.y=4.5+Math.sin(t*.3)*.2;
+    cam.lookAt(0,1.8,0);
+    renderer.render(scene,cam);
+  }catch(e){}
+}
+
+/* ---------- ИГРА ---------- */
+var cur=null,score=0,combo=0,mode='mixed',used={mixed:[],others:[],third:[]};
+var qtext=document.getElementById('qtext'),optsBox=document.getElementById('opts'),
+    svEl=document.getElementById('sv'),fbEl=document.getElementById('fb'),
+    comboEl=document.getElementById('combo');
+
+function showFb(txt,col){
+  fbEl.textContent=txt;fbEl.style.color=col;fbEl.style.opacity=1;
+  clearTimeout(fbEl._t);fbEl._t=setTimeout(function(){fbEl.style.opacity=0;},700);
+}
+function updCombo(){
+  if(combo>=2){comboEl.textContent='🔥 СЕРИЯ x'+combo;comboEl.classList.add('show');}
+  else comboEl.classList.remove('show');
+}
+function pick(){
+  var pool=data;
+  if(mode==='third')pool=data.filter(function(p){return /^(he|she|it) /i.test(p[0]);});
+  else if(mode==='others')pool=data.filter(function(p){return /^(i|we|you|they) /i.test(p[0]);});
+  var u=used[mode],av=[];
+  for(var i=0;i<pool.length;i++)if(u.indexOf(i)===-1)av.push(i);
+  if(!av.length){used[mode]=[];for(var j=0;j<pool.length;j++)av.push(j);}
+  var idx=av[Math.floor(Math.random()*av.length)];
+  used[mode].push(idx);
+  return pool[idx];
+}
+function loadQ(){
+  var q=pick();cur=q;
+  qtext.innerHTML='<span class="lbl">УТВЕРЖДЕНИЕ</span><span class="aff">'+q[0]+'</span>';
+  optsBox.innerHTML='';
+  var os=makeOpts(q[1],q[0]);
+  for(var i=0;i<os.length;i++){
+    (function(opt){
+      var b=document.createElement('button');
+      b.className='opt';b.textContent=opt;
+      b.addEventListener('click',function(){answer(opt,q[1],b);});
       optsBox.appendChild(b);
-    });
-    setTimeout(() => speak(q.affirmative), 350);
+    })(os[i]);
   }
-
-  function handleAnswer(chosen, correct, btn) {
-    initAudio();
-    document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
-
-    if (chosen === correct) {
-      btn.classList.add('correct');
-      score++; combo++;
-      scoreEl.textContent = score;
-      sfxCorrect();
-      showFeedback('✓', '#00ff88');
-      updateCombo();
-      crystal.scale.setScalar(1.35);
-      innerCrystal.material.emissiveIntensity = 6;
-      setTimeout(() => {
-        crystal.scale.setScalar(1);
-        innerCrystal.material.emissiveIntensity = 3;
-      }, 350);
-    } else {
-      btn.classList.add('wrong');
-      document.querySelectorAll('.option-btn').forEach(b => {
-        if (b.dataset.value === correct) b.classList.add('correct');
-      });
-      combo = 0; updateCombo();
-      sfxWrong();
-      showFeedback('✗', '#ff3a3a');
-      let t = 0;
-      const sh = setInterval(() => {
-        crystal.position.x = (Math.random() - 0.5) * 0.6;
-        if (++t > 6) { clearInterval(sh); crystal.position.x = 0; }
-      }, 40);
-    }
-
-    setTimeout(() => speak(correct), 500);
-    setTimeout(loadQuestion, 1700);
+  setTimeout(function(){speak(q[0]);},350);
+}
+function answer(chosen,correct,btn){
+  initAudio();
+  var all=document.querySelectorAll('.opt');
+  for(var i=0;i<all.length;i++)all[i].classList.add('disabled');
+  if(chosen===correct){
+    btn.classList.add('correct');
+    score++;combo++;svEl.textContent=score;sfxOk();
+    showFb('✓','#00ff88');updCombo();
+    if(has3D&&crystal){crystal.scale.set(1.35,1.35,1.35);
+      setTimeout(function(){crystal.scale.set(1,1,1);},350);}
+  }else{
+    btn.classList.add('wrong');
+    for(var j=0;j<all.length;j++)if(all[j].textContent===correct)all[j].classList.add('correct');
+    combo=0;updCombo();sfxNo();showFb('✗','#ff3a3a');
   }
+  setTimeout(function(){speak(correct);},500);
+  setTimeout(loadQ,1600);
+}
 
-  // Смена режима
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfxClick();
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+/* ---------- УПРАВЛЕНИЕ ---------- */
+document.getElementById('restart').addEventListener('click',function(){
+  sfxTap();score=0;combo=0;svEl.textContent=0;updCombo();
+  used[mode]=[];loadQ();
+});
+document.getElementById('speak').addEventListener('click',function(){
+  if(cur)speak(cur[0]);
+});
+var mb=document.querySelectorAll('.mode');
+for(var i=0;i<mb.length;i++){
+  (function(btn){
+    btn.addEventListener('click',function(){
+      sfxTap();
+      for(var x=0;x<mb.length;x++)mb[x].classList.remove('active');
       btn.classList.add('active');
-      mode = btn.dataset.mode;
-      used[mode] = [];
-      thirdGroup.visible = (mode === 'third');
-      othersGroup.visible = (mode === 'others');
-      loadQuestion();
+      mode=btn.getAttribute('data-m');
+      used[mode]=[];
+      if(has3D){
+        group3.visible=(mode==='third');
+        groupO.visible=(mode==='others');
+      }
+      loadQ();
     });
-  });
+  })(mb[i]);
+}
+document.addEventListener('touchstart',function(){initAudio();},{once:true});
+document.addEventListener('click',function(){initAudio();},{once:true});
 
-  // Рестарт
-  document.getElementById('restart-btn').addEventListener('click', () => {
-    sfxClick();
-    score = 0; combo = 0;
-    scoreEl.textContent = 0;
-    updateCombo();
-    used[mode] = [];
-    loadQuestion();
-  });
+/* ---------- СТАРТ ---------- */
+function boot(){
+  if(typeof THREE==='undefined'){setTimeout(boot,300);return;}
+  init3D();
+  loadQ();
+}
+if(document.readyState==='complete')boot();
+else window.addEventListener('load',boot);
 
-  // Кнопка озвучки
-  document.getElementById('speak-btn').addEventListener('click', () => {
-    if (currentQ) speak(currentQ.affirmative);
-  });
-
-  // ===== АНИМАЦИЯ =====
-  let t = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    t += 0.016;
-
-    crystal.rotation.y += 0.005;
-    crystal.rotation.x = Math.sin(t * 0.5) * 0.1;
-    innerCrystal.rotation.y -= 0.01;
-    innerCrystal.rotation.x += 0.008;
-
-    orbitRings.forEach(r => {
-      r.mesh.rotation.z += 0.003 * r.sp;
-      r.mesh.rotation.x += 0.002 * r.sp;
-    });
-
-    crystalGroup.position.y = 3.2 + Math.sin(t * 1.2) * 0.15;
-    sparks.rotation.y += 0.0005;
-    thirdGroup.rotation.y += 0.003;
-    othersGroup.rotation.y -= 0.004;
-
-    r1.intensity = 2.2 + Math.sin(t * 2) * 0.4;
-    r2.intensity = 1.6 + Math.cos(t * 1.7) * 0.3;
-
-    camera.position.x = Math.sin(t * 0.2) * 0.5;
-    camera.position.y = 4.5 + Math.sin(t * 0.3) * 0.2;
-    camera.lookAt(0, 1.8, 0);
-
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
-
-  addEventListener('click', initAudio, { once: true });
-  addEventListener('touchstart', initAudio, { once: true });
-
-  loadQuestion();
-  </script>
+})();
+</script>
 </body>
 </html>
