@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>3D-Арена Знаний: Урок 8.1 (Present Simple)</title>
+  <!-- Tailwind CSS для современного адаптивного интерфейса -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 для полноценной 3D-графики -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Шрифт Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background-color: #050816;
+      color: #f8fafc;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      cursor: grab;
+    }
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+    /* Эффект матового неонового стекла */
+    .glass-panel {
+      background: rgba(13, 19, 38, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(99, 102, 241, 0.28);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(20, 29, 56, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .glass-card:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.75);
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+      background: rgba(30, 44, 82, 0.9);
+    }
+    .glass-card:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    .neon-btn {
+      background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
+      transition: all 0.2s ease;
+    }
+    .neon-btn:hover {
+      filter: brightness(1.12);
+      box-shadow: 0 6px 26px rgba(6, 182, 212, 0.6);
+      transform: translateY(-1px);
+    }
+    .neon-btn:active {
+      transform: scale(0.97);
+    }
+    /* Кастомный скроллбар для словаря */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.6);
+      border-radius: 999px;
+    }
+    /* Анимация пульсации звуковой волны */
+    @keyframes wavePulse {
+      0%, 100% { transform: scaleY(0.35); }
+      50% { transform: scaleY(1); }
+    }
+    .wave-bar {
+      animation: wavePulse 0.9s ease-in-out infinite;
+      transform-origin: bottom;
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92) translateY(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-pop {
+      animation: popIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Полноэкранная 3D-сцена Three.js -->
+  <div id="canvas-container" title="Перетаскивайте мышкой или пальцем, чтобы вращать 3D-камеру"></div>
+
+  <!-- Верхняя панель навигации и статистики -->
+  <header class="fixed top-0 left-0 right-0 z-20 p-3 sm:p-4 pointer-events-none">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 pointer-events-auto">
+      <!-- Логотип и возврат в меню -->
+      <div class="flex items-center gap-2.5">
+        <button id="btn-home" onclick="app.showScreen('menu')" class="glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 hover:border-cyan-400/60 transition cursor-pointer">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center font-extrabold text-sm shadow-lg shadow-cyan-500/30">
+            8.1
+          </div>
+          <div class="text-left">
+            <div class="text-xs sm:text-sm font-bold tracking-tight text-white leading-none">Урок 8.1 · 3D Арена</div>
+            <div class="text-[11px] text-cyan-300/90 mt-0.5">Present Simple: don't / doesn't</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Счётчики очков, серии и кнопки настроек/словаря -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="glass-panel px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+          <div class="flex items-center gap-1.5" title="Очки">
+            <span class="text-amber-400 text-base">★</span>
+            <span id="stat-score" class="font-bold text-white">0</span>
+          </div>
+          <div class="w-px h-4 bg-slate-700"></div>
+          <div class="flex items-center gap-1.5" title="Серия правильных ответов">
+            <span class="text-orange-400 text-base">🔥</span>
+            <span id="stat-streak" class="font-bold text-orange-300">0</span>
+          </div>
+          <div class="w-px h-4 bg-slate-700 hidden sm:block"></div>
+          <div class="hidden sm:flex items-center gap-1.5" title="Изучено фраз">
+            <span class="text-emerald-400 text-base">💎</span>
+            <span id="stat-mastered" class="font-bold text-emerald-300">0/37</span>
+          </div>
+        </div>
+
+        <!-- Кнопка настроек голосов и звука -->
+        <button onclick="app.toggleModal('voice-modal', true)" class="glass-panel p-2.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-2 hover:border-cyan-400/60 transition cursor-pointer" title="Настройка голосов озвучки">
+          <span class="text-base">🎙️</span>
+          <span class="hidden md:inline text-xs font-semibold text-cyan-200">Голоса и звук</span>
+        </button>
+
+        <!-- Кнопка словаря -->
+        <button onclick="app.toggleModal('dict-modal', true)" class="glass-panel p-2.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-2 hover:border-indigo-400/60 transition cursor-pointer" title="Все 37 фраз урока">
+          <span class="text-base">📘</span>
+          <span class="hidden md:inline text-xs font-semibold text-indigo-200">Словарь (37)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Всплывающее уведомление (Toast вместо alert) -->
+  <div id="toast-box" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 -translate-y-3">
+    <div id="toast-content" class="glass-panel px-5 py-2.5 rounded-2xl text-sm font-semibold text-white border border-cyan-400/50 shadow-xl flex items-center gap-2"></div>
+  </div>
+
+  <!-- Основной контейнер экранов -->
+  <main class="relative z-10 w-full h-full flex flex-col justify-between pt-20 pb-4 px-3 sm:px-6 pointer-events-none">
+
+    <!-- ==================== ЭКРАН 1: ГЛАВНОЕ МЕНЮ ==================== -->
+    <section id="screen-menu" class="my-auto max-w-5xl w-full mx-auto pointer-events-auto animate-pop">
+      <div class="text-center mb-5 sm:mb-7">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold mb-2.5">
+          <span>✨ 37 исправленных фраз урока</span>
+          <span>•</span>
+          <span>3D-мир + 2 голоса озвучки</span>
+        </div>
+        <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
+          Кибер-Остров <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400">Present Simple</span>
+        </h1>
+        <p class="text-slate-300 text-xs sm:text-sm max-w-xl mx-auto mt-2">
+          Тренируйте отрицания <span class="text-cyan-300 font-semibold">don't / doesn't</span> и утверждения в 3D-пространстве. Вращайте остров мышкой или пальцем!
+        </p>
+      </div>
+
+      <!-- Сетка 3 игровых режимов + Фоновый плеер -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Режим 1 -->
+        <button onclick="app.startMode('audio-choice')" class="glass-card rounded-3xl p-4 sm:p-5 text-left flex flex-col justify-between group cursor-pointer">
+          <div>
+            <div class="w-11 h-11 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+              🎧
+            </div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 mb-1">Режим 1</div>
+            <h2 class="text-base sm:text-lg font-bold text-white leading-snug">Аудио-выбор</h2>
+            <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              Слушайте фразу на английском и выбирайте правильный русский перевод среди 4 голограмм.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-cyan-300">
+            <span>Играть</span>
+            <span>→</span>
+          </div>
+        </button>
+
+        <!-- Режим 2 -->
+        <button onclick="app.startMode('builder')" class="glass-card rounded-3xl p-4 sm:p-5 text-left flex flex-col justify-between group cursor-pointer">
+          <div>
+            <div class="w-11 h-11 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+              🧩
+            </div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 mb-1">Режим 2</div>
+            <h2 class="text-base sm:text-lg font-bold text-white leading-snug">3D-Конструктор</h2>
+            <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              Соберите английское предложение по словам. Внимание на <span class="text-indigo-300 font-semibold">don't</span> и <span class="text-indigo-300 font-semibold">doesn't</span>!
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-indigo-300">
+            <span>Собрать</span>
+            <span>→</span>
+          </div>
+        </button>
+
+        <!-- Режим 3 -->
+        <button onclick="app.startMode('sprint')" class="glass-card rounded-3xl p-4 sm:p-5 text-left flex flex-col justify-between group cursor-pointer">
+          <div>
+            <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+              ⚡
+            </div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1">Режим 3</div>
+            <h2 class="text-base sm:text-lg font-bold text-white leading-snug">Спринт-Дуэль 60с</h2>
+            <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              60 секунд на максимум очков и комбо! Соревнуйтесь с братом по очереди на рекорд.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-amber-300">
+            <span>Рекорд: <span id="menu-best-sprint">0</span></span>
+            <span>→</span>
+          </div>
+        </button>
+
+        <!-- Фоновый плеер с переводом -->
+        <button onclick="app.startMode('podcast')" class="glass-card rounded-3xl p-4 sm:p-5 text-left flex flex-col justify-between group cursor-pointer border-emerald-400/35">
+          <div>
+            <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition">
+              📻
+            </div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Фоновый режим</div>
+            <h2 class="text-base sm:text-lg font-bold text-white leading-snug">Плеер с переводом</h2>
+            <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              Непрерывное проигрывание: Английский (Голос 1) → Русский перевод (Голос 2) как подкаст.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-semibold text-emerald-300">
+            <span>Слушать фоном</span>
+            <span>▶</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Быстрая панель проверки двух голосов прямо из меню -->
+      <div class="mt-4 glass-panel rounded-2xl p-3 sm:px-5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm text-slate-300">
+          <span class="text-cyan-400 text-lg">🔊</span>
+          <span>Озвучка двумя разными голосами: <strong class="text-white" id="summary-en-voice">EN (Голос 1)</strong> + <strong class="text-white" id="summary-ru-voice">RU (Голос 2)</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="app.testDualVoices()" class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/40 text-xs font-semibold text-cyan-200 transition cursor-pointer">
+            ▶ Тест 2 голосов
+          </button>
+          <button onclick="app.toggleModal('voice-modal', true)" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-200 transition cursor-pointer">
+            Настроить
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ЭКРАН 2: РЕЖИМ 1 (АУДИО-ВЫБОР) ==================== -->
+    <section id="screen-audio-choice" class="hidden my-auto max-w-3xl w-full mx-auto pointer-events-auto animate-pop">
+      <div class="glass-panel rounded-3xl p-4 sm:p-6">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 text-xs font-bold">
+            🎧 Режим 1: Аудио-выбор
+          </span>
+          <span id="ac-progress" class="text-xs font-semibold text-slate-400">Вопрос 1 / 10</span>
+        </div>
+
+        <!-- Блок проигрывания фразы -->
+        <div class="bg-slate-900/70 border border-slate-700/70 rounded-2xl p-4 sm:p-6 text-center mb-5">
+          <div class="flex flex-wrap items-center justify-center gap-3 mb-3">
+            <button onclick="app.replayCurrentAudio(1.0)" class="neon-btn px-5 py-3 rounded-2xl font-bold text-sm sm:text-base text-white flex items-center gap-2 cursor-pointer">
+              <span>🔊</span>
+              <span>Прослушать фразу</span>
+            </button>
+            <button onclick="app.replayCurrentAudio(0.72)" class="glass-card px-4 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-cyan-200 flex items-center gap-1.5 cursor-pointer" title="Произнести медленно">
+              <span>🐢</span>
+              <span>0.75x</span>
+            </button>
+            <button id="ac-reveal-btn" onclick="app.toggleRevealEn()" class="glass-card px-4 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-slate-300 flex items-center gap-1.5 cursor-pointer">
+              <span>👁️</span>
+              <span>Показать текст</span>
+            </button>
+          </div>
+          <div id="ac-en-text" class="text-lg sm:text-2xl font-bold text-cyan-300 tracking-wide min-h-[2rem] transition-all">
+            •••• ••••• •••••
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Выберите точный перевод услышанной фразы</p>
+        </div>
+
+        <!-- 4 варианта ответа -->
+        <div id="ac-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+        <!-- Панель обратной связи -->
+        <div id="ac-feedback" class="hidden mt-4 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+          <div id="ac-feedback-text" class="text-sm font-semibold"></div>
+          <button onclick="app.nextAudioChoice()" class="neon-btn px-5 py-2 rounded-xl text-xs sm:text-sm font-bold text-white cursor-pointer">
+            Следующая фраза →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ЭКРАН 3: РЕЖИМ 2 (3D-КОНСТРУКТОР) ==================== -->
+    <section id="screen-builder" class="hidden my-auto max-w-3xl w-full mx-auto pointer-events-auto animate-pop">
+      <div class="glass-panel rounded-3xl p-4 sm:p-6">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold">
+            🧩 Режим 2: 3D-Конструктор фраз
+          </span>
+          <span id="bld-progress" class="text-xs font-semibold text-slate-400">Фраза 1 / 10</span>
+        </div>
+
+        <!-- Задание на русском + кнопка озвучки -->
+        <div class="bg-slate-900/75 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-center sm:text-left">
+            <div class="text-xs text-indigo-300 font-semibold mb-1">Переведите на английский:</div>
+            <div id="bld-ru-prompt" class="text-lg sm:text-2xl font-extrabold text-white">Я не хочу знать это</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="app.speakRuPrompt()" class="glass-card px-3.5 py-2.5 rounded-xl text-xs font-semibold text-emerald-300 cursor-pointer" title="Озвучить русский перевод (Голос 2)">
+              🇷🇺 RU
+            </button>
+            <button onclick="app.speakEnHint()" class="glass-card px-3.5 py-2.5 rounded-xl text-xs font-semibold text-cyan-300 cursor-pointer" title="Аудио-подсказка на английском (Голос 1)">
+              🇬🇧 Подсказка
+            </button>
+          </div>
+        </div>
+
+        <!-- Зона сборки ответа -->
+        <div class="mb-4">
+          <div class="text-xs text-slate-400 mb-1.5 flex justify-between">
+            <span>Ваше предложение (нажмите на слово, чтобы убрать):</span>
+            <button onclick="app.clearBuilder()" class="text-rose-400 hover:underline cursor-pointer">Очистить</button>
+          </div>
+          <div id="bld-answer-zone" class="min-h-[64px] p-3 rounded-2xl bg-slate-950/80 border-2 border-dashed border-indigo-400/40 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500 italic">Нажимайте на слова ниже...</span>
+          </div>
+        </div>
+
+        <!-- Банк слов (включая слова-ловушки don't / doesn't) -->
+        <div id="bld-word-bank" class="flex flex-wrap justify-center gap-2 mb-5"></div>
+
+        <!-- Кнопки проверки -->
+        <div class="flex items-center justify-between gap-3">
+          <div id="bld-feedback" class="text-xs sm:text-sm font-semibold"></div>
+          <div class="flex items-center gap-2 ml-auto">
+            <button id="bld-check-btn" onclick="app.checkBuilder()" class="neon-btn px-6 py-2.5 rounded-2xl font-bold text-sm text-white cursor-pointer">
+              Проверить ✓
+            </button>
+            <button id="bld-next-btn" onclick="app.nextBuilder()" class="hidden neon-btn px-6 py-2.5 rounded-2xl font-bold text-sm text-white cursor-pointer">
+              Дальше →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ЭКРАН 4: РЕЖИМ 3 (СПРИНТ-ДУЭЛЬ 60С) ==================== -->
+    <section id="screen-sprint" class="hidden my-auto max-w-3xl w-full mx-auto pointer-events-auto animate-pop">
+      <div class="glass-panel rounded-3xl p-4 sm:p-6">
+        <!-- Верхняя строка таймера и очков раунда -->
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-bold">
+            ⚡ Спринт-Дуэль (60 сек)
+          </span>
+          <div class="flex items-center gap-4">
+            <div class="text-xs sm:text-sm font-bold text-amber-300">
+              Очки раунда: <span id="spr-round-score" class="text-white text-base">0</span>
+            </div>
+            <div class="px-3.5 py-1 rounded-xl bg-rose-500/20 border border-rose-400/40 font-mono font-extrabold text-base text-rose-300">
+              ⏱ <span id="spr-timer">60</span>с
+            </div>
+          </div>
+        </div>
+
+        <!-- Игровое поле спринта -->
+        <div id="spr-play-area">
+          <div class="bg-slate-900/75 border border-amber-500/30 rounded-2xl p-4 sm:p-5 text-center mb-4">
+            <div class="flex items-center justify-center gap-2 mb-1">
+              <span id="spr-direction-badge" class="text-[11px] uppercase tracking-wider font-bold text-amber-400">EN → RU</span>
+              <button onclick="app.replaySprintAudio()" class="text-cyan-300 hover:text-cyan-200 text-sm cursor-pointer" title="Озвучить">🔊</button>
+            </div>
+            <div id="spr-question" class="text-lg sm:text-2xl font-extrabold text-white">He doesn't work there</div>
+          </div>
+          <div id="spr-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <!-- Итоги раунда для соревнования братьев -->
+        <div id="spr-gameover" class="hidden text-center py-4">
+          <div class="text-4xl mb-2">🏆</div>
+          <h3 class="text-2xl font-extrabold text-white">Время вышло!</h3>
+          <p class="text-sm text-slate-300 mt-1">Передайте ход брату и попробуйте побить этот результат!</p>
+          <div class="my-5 inline-flex gap-6 glass-card px-6 py-4 rounded-2xl">
+            <div>
+              <div class="text-xs text-slate-400">Счёт раунда</div>
+              <div id="spr-final-score" class="text-2xl font-extrabold text-amber-400">0</div>
+            </div>
+            <div class="w-px bg-slate-700"></div>
+            <div>
+              <div class="text-xs text-slate-400">Лучший рекорд</div>
+              <div id="spr-final-best" class="text-2xl font-extrabold text-cyan-400">0</div>
+            </div>
+          </div>
+          <div class="flex justify-center gap-3">
+            <button onclick="app.startMode('sprint')" class="neon-btn px-6 py-3 rounded-2xl font-bold text-sm text-white cursor-pointer">
+              🔄 Сыграть ещё раз
+            </button>
+            <button onclick="app.showScreen('menu')" class="glass-card px-5 py-3 rounded-2xl font-semibold text-sm text-slate-200 cursor-pointer">
+              В меню
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ЭКРАН 5: ФОНОВЫЙ АУДИОПЛЕЕР С ПЕРЕВОДОМ ==================== -->
+    <section id="screen-podcast" class="hidden my-auto max-w-3xl w-full mx-auto pointer-events-auto animate-pop">
+      <div class="glass-panel rounded-3xl p-4 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
+            📻 Фоновый плеер с переводом
+          </span>
+          <span id="pod-counter" class="text-xs font-semibold text-slate-300">Фраза 1 из 37</span>
+        </div>
+
+        <!-- Карточка текущей фразы и визуализация волны -->
+        <div class="bg-slate-950/75 border border-emerald-500/30 rounded-3xl p-5 sm:p-7 text-center mb-5 relative overflow-hidden">
+          <!-- Индикатор активного диктора -->
+          <div class="flex items-center justify-center gap-2 mb-3">
+            <span id="pod-speaker-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+              Готов к воспроизведению
+            </span>
+          </div>
+
+          <!-- Английская фраза -->
+          <div id="pod-en" class="text-xl sm:text-3xl font-extrabold text-cyan-300 tracking-tight mb-2 transition-all">
+            You don't try to learn English
+          </div>
+          <!-- Русский перевод -->
+          <div id="pod-ru" class="text-base sm:text-xl font-medium text-emerald-200/95 transition-all">
+            Ты не пытаешься выучить английский
+          </div>
+
+          <!-- Эквалайзер / звуковая волна -->
+          <div id="pod-visualizer" class="flex items-end justify-center gap-1.5 h-8 mt-5 opacity-40 transition-opacity">
+            <div class="w-1.5 h-full bg-cyan-400 rounded-full wave-bar" style="animation-delay: 0.0s"></div>
+            <div class="w-1.5 h-full bg-sky-400 rounded-full wave-bar" style="animation-delay: 0.15s"></div>
+            <div class="w-1.5 h-full bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.3s"></div>
+            <div class="w-1.5 h-full bg-emerald-400 rounded-full wave-bar" style="animation-delay: 0.45s"></div>
+            <div class="w-1.5 h-full bg-cyan-400 rounded-full wave-bar" style="animation-delay: 0.2s"></div>
+            <div class="w-1.5 h-full bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.35s"></div>
+            <div class="w-1.5 h-full bg-emerald-400 rounded-full wave-bar" style="animation-delay: 0.1s"></div>
+          </div>
+        </div>
+
+        <!-- Кнопки управления плеером -->
+        <div class="flex items-center justify-center gap-3 sm:gap-4 mb-5">
+          <button onclick="app.podcastPrev()" class="glass-card p-3.5 rounded-2xl text-lg cursor-pointer" title="Предыдущая фраза">
+            ⏮
+          </button>
+          <button id="pod-play-btn" onclick="app.togglePodcastPlay()" class="neon-btn px-7 py-3.5 rounded-2xl font-extrabold text-base text-white flex items-center gap-2 cursor-pointer">
+            <span>▶</span>
+            <span>Старт</span>
+          </button>
+          <button onclick="app.podcastNext()" class="glass-card p-3.5 rounded-2xl text-lg cursor-pointer" title="Следующая фраза">
+            ⏭
+          </button>
+        </div>
+
+        <!-- Настройки фонового плеера -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
+            <span class="text-slate-300">Порядок:</span>
+            <button id="pod-shuffle-btn" onclick="app.togglePodcastShuffle()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-cyan-300 font-semibold cursor-pointer">
+              По порядку 1→37
+            </button>
+          </div>
+          <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
+            <span class="text-slate-300">Пауза:</span>
+            <select id="pod-pause-select" class="bg-slate-800 text-white rounded-lg px-2 py-1 border border-slate-700 outline-none cursor-pointer">
+              <option value="700">0.7 сек (Быстро)</option>
+              <option value="1300" selected>1.3 сек (Норма)</option>
+              <option value="2200">2.2 сек (Повтор)</option>
+            </select>
+          </div>
+          <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
+            <span class="text-slate-300">Режим цикла:</span>
+            <select id="pod-pattern-select" class="bg-slate-800 text-white rounded-lg px-2 py-1 border border-slate-700 outline-none cursor-pointer">
+              <option value="en-ru" selected>EN → RU</option>
+              <option value="en-ru-en">EN → RU → EN</option>
+              <option value="ru-en">RU → EN (Тренировка)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Нижняя подсказка по 3D-управлению -->
+    <footer class="text-center text-[11px] text-slate-400/80 pointer-events-none">
+      Вращайте 3D-остров знаний мышкой или пальцем · Урок 8.1 (37 фраз проверено и исправлено)
+    </footer>
+  </main>
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: НАСТРОЙКА ГОЛОСОВ И ЗВУКА ==================== -->
+  <div id="voice-modal" class="hidden fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel max-w-lg w-full rounded-3xl p-5 sm:p-6 animate-pop">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
+          <span>🎙️</span>
+          <span>Настройка голосов и звуков</span>
+        </h3>
+        <button onclick="app.toggleModal('voice-modal', false)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm">
+        <!-- Голос 1: Английский -->
+        <div class="glass-card p-3.5 rounded-2xl space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-cyan-300">🇬🇧 Голос 1 — Английская фраза</span>
+            <button onclick="app.previewEnVoice()" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-200 text-xs font-semibold hover:bg-cyan-500/30 cursor-pointer">▶ Тест EN</button>
+          </div>
+          <select id="select-en-voice" onchange="app.saveVoiceSettings()" class="w-full bg-slate-900 text-white rounded-xl p-2.5 border border-slate-700 text-xs outline-none"></select>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Тембр (высота): <span id="val-en-pitch" class="text-white">1.05</span></label>
+              <input id="range-en-pitch" type="range" min="0.7" max="1.4" step="0.05" value="1.05" oninput="app.saveVoiceSettings()" class="w-full accent-cyan-400">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Скорость речи: <span id="val-en-rate" class="text-white">0.95</span></label>
+              <input id="range-en-rate" type="range" min="0.65" max="1.3" step="0.05" value="0.95" oninput="app.saveVoiceSettings()" class="w-full accent-cyan-400">
+            </div>
+          </div>
+        </div>
+
+        <!-- Голос 2: Русский перевод -->
+        <div class="glass-card p-3.5 rounded-2xl space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-emerald-300">🇷🇺 Голос 2 — Русский перевод</span>
+            <button onclick="app.previewRuVoice()" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-200 text-xs font-semibold hover:bg-emerald-500/30 cursor-pointer">▶ Тест RU</button>
+          </div>
+          <select id="select-ru-voice" onchange="app.saveVoiceSettings()" class="w-full bg-slate-900 text-white rounded-xl p-2.5 border border-slate-700 text-xs outline-none"></select>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Тембр (высота): <span id="val-ru-pitch" class="text-white">0.90</span></label>
+              <input id="range-ru-pitch" type="range" min="0.7" max="1.4" step="0.05" value="0.90" oninput="app.saveVoiceSettings()" class="w-full accent-emerald-400">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Скорость речи: <span id="val-ru-rate" class="text-white">1.00</span></label>
+              <input id="range-ru-rate" type="range" min="0.65" max="1.3" step="0.05" value="1.00" oninput="app.saveVoiceSettings()" class="w-full accent-emerald-400">
+            </div>
+          </div>
+        </div>
+
+        <!-- Звуковые эффекты -->
+        <div class="glass-card p-3.5 rounded-2xl flex items-center justify-between">
+          <div>
+            <div class="font-bold text-white">🎵 Звуковые эффекты 3D-арены</div>
+            <div class="text-[11px] text-slate-400">Синтезированные сигналы побед, кликов и комбо</div>
+          </div>
+          <button id="btn-toggle-sfx" onclick="app.toggleSfx()" class="px-4 py-2 rounded-xl bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 font-bold text-xs cursor-pointer">
+            Включены 🔊
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button onclick="app.toggleModal('voice-modal', false)" class="neon-btn px-6 py-2.5 rounded-2xl font-bold text-sm text-white cursor-pointer">
+          Готово
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: СЛОВАРЬ 37 ФРАЗ ==================== -->
+  <div id="dict-modal" class="hidden fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel max-w-2xl w-full max-h-[85vh] rounded-3xl p-5 sm:p-6 flex flex-col animate-pop">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-lg font-extrabold text-white">📘 Словарь Урока 8.1 (37 фраз)</h3>
+          <p class="text-xs text-slate-400">Все ошибки из таблицы исправлены. Нажмите на любую фразу, чтобы прослушать оба голоса.</p>
+        </div>
+        <button onclick="app.toggleModal('dict-modal', false)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer">✕</button>
+      </div>
+
+      <div id="dict-list" class="overflow-y-auto pr-1 space-y-2 flex-1"></div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * 1. БАЗА ДАННЫХ УРОКА 8.1 (37 ИСПРАВЛЕННЫХ ФРАЗ ИЗ EXCEL)
+     * ============================================================================
+     */
+    const LESSON_PHRASES = [
+      { id: 1, en: "You don't try to learn English", ru: "Ты не пытаешься выучить английский" },
+      { id: 2, en: "It doesn't work", ru: "Это не работает" },
+      { id: 3, en: "I don't want to know it", ru: "Я не хочу знать это" },
+      { id: 4, en: "I don't agree with you", ru: "Я не согласен с тобой" },
+      { id: 5, en: "I don't like it", ru: "Мне не нравится это" },
+      { id: 6, en: "She doesn't want to discuss it", ru: "Она не хочет обсуждать это" },
+      { id: 7, en: "He doesn't work there", ru: "Он не работает там" },
+      { id: 8, en: "He works here", ru: "Он работает здесь" },
+      { id: 9, en: "He doesn't know it", ru: "Он не знает это" },
+      { id: 10, en: "It doesn't seem strange", ru: "Это не выглядит странным" },
+      { id: 11, en: "I don't know", ru: "Я не знаю" },
+      { id: 12, en: "She doesn't remember it", ru: "Она не помнит это" },
+      { id: 13, en: "He doesn't want to read these books", ru: "Он не хочет читать эти книги" },
+      { id: 14, en: "He wants to read those books", ru: "Он хочет читать те книги" },
+      { id: 15, en: "I don't want to say it", ru: "Я не хочу сказать это" },
+      { id: 16, en: "He doesn't have this information", ru: "У него нет этой информации" },
+      { id: 17, en: "I don't want to play computer games", ru: "Я не хочу играть в компьютерные игры" },
+      { id: 18, en: "I don't know this person", ru: "Я не знаю этого человека" },
+      { id: 19, en: "I don't want to do it right now", ru: "Я не хочу делать это прямо сейчас" },
+      { id: 20, en: "He doesn't want to try to find a good job", ru: "Он не хочет пытаться найти хорошую работу" },
+      { id: 21, en: "He doesn't try to find a good job", ru: "Он не пытается найти хорошую работу" },
+      { id: 22, en: "I don't want to live in this country", ru: "Я не хочу жить в этой стране" },
+      { id: 23, en: "My friend doesn't think so", ru: "Мой друг так не думает" },
+      { id: 24, en: "I don't want to tell you about this problem", ru: "Я не хочу рассказывать тебе об этой проблеме" },
+      { id: 25, en: "I don't want to study there", ru: "Я не хочу учиться там" },
+      { id: 26, en: "We don't want to live in another place", ru: "Мы не хотим жить в другом месте" },
+      { id: 27, en: "It doesn't seem useful", ru: "Это не кажется полезным" },
+      { id: 28, en: "They don't help me", ru: "Они не помогают мне" },
+      { id: 29, en: "I don't want to tell you this thing", ru: "Я не хочу говорить тебе эту вещь" },
+      { id: 30, en: "I don't want to think about it", ru: "Я не хочу думать об этом" },
+      { id: 31, en: "I don't understand these people", ru: "Я не понимаю этих людей" },
+      { id: 32, en: "We don't understand it", ru: "Мы не понимаем это" },
+      { id: 33, en: "I don't want to discuss it", ru: "Я не хочу обсуждать это" },
+      { id: 34, en: "He doesn't have a car", ru: "У него нет машины" },
+      { id: 35, en: "I don't want to drink", ru: "Я не хочу пить" },
+      { id: 36, en: "I don't want to live in that city", ru: "Я не хочу жить в том городе" },
+      { id: 37, en: "It doesn't help me", ru: "Это не помогает мне" }
+    ];
+
+    /**
+     * ============================================================================
+     * 2. СИНТЕЗАТОР ЗВУКОВЫХ ЭФФЕКТОВ (Web Audio API - полностью офлайн)
+     * ============================================================================
+     */
+    class SoundFX {
+      constructor() {
+        this.enabled = true;
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type = 'sine', duration = 0.15, vol = 0.15, delay = 0) {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime + delay;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.exponentialRampToValueAtTime(vol, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.02);
+        } catch (e) {
+          // Игнорируем ограничения автовоспроизведения до первого клика
+        }
+      }
+
+      click() {
+        this.playTone(620, 'triangle', 0.08, 0.12);
+      }
+
+      success() {
+        this.playTone(523.25, 'sine', 0.16, 0.18, 0);      // C5
+        this.playTone(659.25, 'sine', 0.16, 0.18, 0.07);   // E5
+        this.playTone(783.99, 'triangle', 0.28, 0.2, 0.14);// G5
+      }
+
+      error() {
+        this.playTone(230, 'sawtooth', 0.18, 0.14, 0);
+        this.playTone(175, 'sawtooth', 0.25, 0.14, 0.1);
+      }
+
+      levelUp() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+          this.playTone(f, 'triangle', 0.22, 0.18, idx * 0.08);
+        });
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 3. ДВИЖОК ДВУХГОЛОСОЙ ОЗВУЧКИ (Web Speech API)
+     * ============================================================================
+     */
+    class VoiceEngine {
+      constructor() {
+        this.synth = window.speechSynthesis || null;
+        this.voices = [];
+        this.enVoiceName = '';
+        this.ruVoiceName = '';
+        this.enPitch = 1.05;
+        this.enRate = 0.95;
+        this.ruPitch = 0.90;
+        this.ruRate = 1.00;
+        this.isSpeaking = false;
+
+        if (this.synth) {
+          this.loadVoices();
+          if (typeof this.synth.onvoiceschanged !== 'undefined') {
+            this.synth.onvoiceschanged = () => this.loadVoices();
+          }
+        }
+      }
+
+      loadVoices() {
+        if (!this.synth) return;
+        this.voices = this.synth.getVoices();
+        if (!this.voices.length) return;
+
+        const enVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+        const ruVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('ru'));
+
+        // Подбираем разные по характеру голоса по умолчанию
+        if (!this.enVoiceName && enVoices.length) {
+          const preferredEn = enVoices.find(v => /google|samantha|daniel|aria|jenny|uk|us/i.test(v.name)) || enVoices[0];
+          this.enVoiceName = preferredEn.name;
+        }
+        if (!this.ruVoiceName && ruVoices.length) {
+          const preferredRu = ruVoices.find(v => /google|milena|irina|pavel|yuri|dmitry/i.test(v.name)) || ruVoices[0];
+          this.ruVoiceName = preferredRu.name;
+        }
+        app.populateVoiceSelectors();
+      }
+
+      stop() {
+        if (this.synth) {
+          this.synth.cancel();
+        }
+        this.isSpeaking = false;
+      }
+
+      speak(text, langType = 'en', rateOverride = null) {
+        return new Promise((resolve) => {
+          if (!this.synth) {
+            resolve();
+            return;
+          }
+          this.synth.cancel();
+
+          const utter = new SpeechSynthesisUtterance(text);
+          if (langType === 'en') {
+            utter.lang = 'en-US';
+            const v = this.voices.find(item => item.name === this.enVoiceName);
+            if (v) utter.voice = v;
+            utter.pitch = this.enPitch;
+            utter.rate = rateOverride !== null ? rateOverride : this.enRate;
+          } else {
+            utter.lang = 'ru-RU';
+            const v = this.voices.find(item => item.name === this.ruVoiceName);
+            if (v) utter.voice = v;
+            utter.pitch = this.ruPitch;
+            utter.rate = rateOverride !== null ? rateOverride : this.ruRate;
+          }
+
+          this.isSpeaking = true;
+          utter.onend = () => {
+            this.isSpeaking = false;
+            resolve();
+          };
+          utter.onerror = () => {
+            this.isSpeaking = false;
+            resolve();
+          };
+
+          this.synth.speak(utter);
+        });
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 4. ПОЛНОЦЕННАЯ 3D-СЦЕНА НА THREE.JS (Кибер-остров, Дрон-наставник, Салюты)
+     * ============================================================================
+     */
+    class CyberArena3D {
+      constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x050816, 0.022);
+
+        this.camera = new THREE.PerspectiveCamera(
+          52,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          200
+        );
+        this.camera.position.set(0, 5.2, 13.5);
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.container.appendChild(this.renderer.domElement);
+
+        // Параметры орбитальной камеры (вращение мышкой и пальцем)
+        this.camTheta = 0;
+        this.camPhi = 0.36;
+        this.camRadius = 13.8;
+        this.isDragging = false;
+        this.prevMouse = { x: 0, y: 0 };
+
+        // Состояние реакции 3D-сцены
+        this.droneState = 'idle'; // idle | happy | error | speaking
+        this.stateTimer = 0;
+        this.burstParticles = [];
+        this.crystals = [];
+
+        this.setupLights();
+        this.buildIsland();
+        this.buildDrone();
+        this.buildStarfield();
+        this.bindCameraControls();
+
+        window.addEventListener('resize', () => this.onResize());
+      }
+
+      setupLights() {
+        const ambient = new THREE.AmbientLight(0x4f46e5, 0.85);
+        this.scene.add(ambient);
+
+        this.mainLight = new THREE.PointLight(0x38bdf8, 2.4, 40);
+        this.mainLight.position.set(0, 7, 4);
+        this.scene.add(this.mainLight);
+
+        const rimLight = new THREE.PointLight(0xa855f7, 2.0, 35);
+        rimLight.position.set(-8, 3, -6);
+        this.scene.add(rimLight);
+      }
+
+      buildIsland() {
+        this.islandGroup = new THREE.Group();
+        this.islandGroup.position.y = -2.2;
+        this.scene.add(this.islandGroup);
+
+        // Верхняя неоновая платформа кибер-острова
+        const topGeo = new THREE.CylinderGeometry(4.6, 3.8, 0.6, 8);
+        const topMat = new THREE.MeshStandardMaterial({
+          color: 0x0f172a,
+          metalness: 0.75,
+          roughness: 0.25,
+          emissive: 0x1e1b4b,
+          emissiveIntensity: 0.6
+        });
+        const topMesh = new THREE.Mesh(topGeo, topMat);
+        this.islandGroup.add(topMesh);
+
+        // Нижняя скальная пирамида парящего острова
+        const rockGeo = new THREE.ConeGeometry(3.8, 4.5, 7);
+        const rockMat = new THREE.MeshStandardMaterial({
+          color: 0x1e293b,
+          metalness: 0.4,
+          roughness: 0.7,
+          flatShading: true
+        });
+        const rockMesh = new THREE.Mesh(rockGeo, rockMat);
+        rockMesh.rotation.x = Math.PI;
+        rockMesh.position.y = -2.55;
+        this.islandGroup.add(rockMesh);
+
+        // Светящееся энергокольцо вокруг острова
+        const ringGeo = new THREE.TorusGeometry(5.5, 0.06, 12, 64);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+        this.energyRing = new THREE.Mesh(ringGeo, ringMat);
+        this.energyRing.rotation.x = Math.PI / 2;
+        this.energyRing.position.y = 0.2;
+        this.islandGroup.add(this.energyRing);
+
+        // Второе наклонное кольцо
+        const ringGeo2 = new THREE.TorusGeometry(6.3, 0.035, 10, 64);
+        const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x818cf8 });
+        this.energyRing2 = new THREE.Mesh(ringGeo2, ringMat2);
+        this.energyRing2.rotation.set(Math.PI / 2.3, 0.2, 0);
+        this.islandGroup.add(this.energyRing2);
+
+        // 8 плавающих 3D-кристаллов знаний по периметру
+        const crysGeo = new THREE.OctahedronGeometry(0.42, 0);
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const crysMat = new THREE.MeshStandardMaterial({
+            color: i % 2 === 0 ? 0x22d3ee : 0x818cf8,
+            emissive: i % 2 === 0 ? 0x0891b2 : 0x4f46e5,
+            emissiveIntensity: 0.7,
+            metalness: 0.3,
+            roughness: 0.15
+          });
+          const crystal = new THREE.Mesh(crysGeo, crysMat);
+          crystal.position.set(Math.cos(angle) * 4.5, 1.1 + (i % 3) * 0.35, Math.sin(angle) * 4.5);
+          crystal.userData = { baseY: crystal.position.y, phase: i * 0.9 };
+          this.islandGroup.add(crystal);
+          this.crystals.push(crystal);
+        }
+      }
+
+      buildDrone() {
+        // 3D-дрон наставник в центре сцены
+        this.drone = new THREE.Group();
+        this.drone.position.set(0, 1.3, 0);
+        this.scene.add(this.drone);
+
+        // Ядро дрона
+        const coreGeo = new THREE.IcosahedronGeometry(0.95, 1);
+        this.coreMat = new THREE.MeshStandardMaterial({
+          color: 0x38bdf8,
+          emissive: 0x0284c7,
+          emissiveIntensity: 0.9,
+          metalness: 0.5,
+          roughness: 0.2
+        });
+        this.droneCore = new THREE.Mesh(coreGeo, this.coreMat);
+        this.drone.add(this.droneCore);
+
+        // Внешний гироскоп-обруч дрона
+        const gyroGeo = new THREE.TorusGeometry(1.45, 0.06, 12, 48);
+        this.gyroMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+        this.droneGyro = new THREE.Mesh(gyroGeo, this.gyroMat);
+        this.drone.add(this.droneGyro);
+
+        // Второй гироскоп
+        const gyroGeo2 = new THREE.TorusGeometry(1.7, 0.04, 12, 48);
+        this.droneGyro2 = new THREE.Mesh(gyroGeo2, new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
+        this.droneGyro2.rotation.y = Math.PI / 2;
+        this.drone.add(this.droneGyro2);
+      }
+
+      buildStarfield() {
+        const count = 900;
+        const positions = new Float32Array(count * 3);
+        for (let i = 0; i < count * 3; i += 3) {
+          positions[i] = (Math.random() - 0.5) * 110;
+          positions[i + 1] = (Math.random() - 0.5) * 90;
+          positions[i + 2] = (Math.random() - 0.5) * 110;
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const mat = new THREE.PointsMaterial({
+          color: 0xbae6fd,
+          size: 0.28,
+          transparent: true,
+          opacity: 0.85
+        });
+        this.stars = new THREE.Points(geo, mat);
+        this.scene.add(this.stars);
+      }
+
+      triggerReaction(type) {
+        this.droneState = type;
+        this.stateTimer = 1.2;
+
+        if (type === 'happy') {
+          this.coreMat.color.setHex(0x10b981);
+          this.coreMat.emissive.setHex(0x059669);
+          this.gyroMat.color.setHex(0x34d399);
+          this.mainLight.color.setHex(0x10b981);
+          this.spawnFireworks(0x34d399);
+        } else if (type === 'error') {
+          this.coreMat.color.setHex(0xf43f5e);
+          this.coreMat.emissive.setHex(0xe11d48);
+          this.gyroMat.color.setHex(0xfb7185);
+          this.mainLight.color.setHex(0xf43f5e);
+        }
+      }
+
+      spawnFireworks(colorHex) {
+        const geo = new THREE.OctahedronGeometry(0.14, 0);
+        const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+        for (let i = 0; i < 28; i++) {
+          const p = new THREE.Mesh(geo, mat);
+          p.position.copy(this.drone.position);
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.random() * Math.PI;
+          const speed = 0.08 + Math.random() * 0.14;
+          p.userData = {
+            vx: Math.sin(phi) * Math.cos(theta) * speed,
+            vy: Math.cos(phi) * speed + 0.06,
+            vz: Math.sin(phi) * Math.sin(theta) * speed,
+            life: 1.0
+          };
+          this.scene.add(p);
+          this.burstParticles.push(p);
+        }
+      }
+
+      bindCameraControls() {
+        const dom = this.renderer.domElement;
+
+        dom.addEventListener('mousedown', (e) => {
+          this.isDragging = true;
+          this.prevMouse = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('mouseup', () => {
+          this.isDragging = false;
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (!this.isDragging) return;
+          const dx = e.clientX - this.prevMouse.x;
+          const dy = e.clientY - this.prevMouse.y;
+          this.camTheta -= dx * 0.006;
+          this.camPhi = Math.max(0.12, Math.min(1.15, this.camPhi + dy * 0.005));
+          this.prevMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        dom.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            this.isDragging = true;
+            this.prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          }
+        }, { passive: true });
+        window.addEventListener('touchend', () => {
+          this.isDragging = false;
+        });
+        window.addEventListener('touchmove', (e) => {
+          if (!this.isDragging || e.touches.length !== 1) return;
+          const dx = e.touches[0].clientX - this.prevMouse.x;
+          const dy = e.touches[0].clientY - this.prevMouse.y;
+          this.camTheta -= dx * 0.007;
+          this.camPhi = Math.max(0.12, Math.min(1.15, this.camPhi + dy * 0.006));
+          this.prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true });
+      }
+
+      onResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      update(time, isSpeaking) {
+        const t = time * 0.001;
+
+        // Плавное авто-вращение камеры, если пользователь не тянет её
+        if (!this.isDragging) {
+          this.camTheta += 0.0018;
+        }
+        this.camera.position.x = this.camRadius * Math.sin(this.camTheta) * Math.cos(this.camPhi);
+        this.camera.position.y = this.camRadius * Math.sin(this.camPhi) + 0.5;
+        this.camera.position.z = this.camRadius * Math.cos(this.camTheta) * Math.cos(this.camPhi);
+        this.camera.lookAt(0, 0.2, 0);
+
+        // Левитация острова и кристаллов
+        this.islandGroup.position.y = -2.2 + Math.sin(t * 1.4) * 0.14;
+        this.energyRing.rotation.z = t * 0.35;
+        this.energyRing2.rotation.z = -t * 0.25;
+
+        this.crystals.forEach((c) => {
+          c.rotation.y += 0.02;
+          c.position.y = c.userData.baseY + Math.sin(t * 2.2 + c.userData.phase) * 0.22;
+        });
+
+        // Анимация 3D-дрона
+        this.drone.position.y = 1.35 + Math.sin(t * 2.5) * 0.18;
+        this.droneGyro.rotation.x = t * 1.4;
+        this.droneGyro.rotation.y = t * 0.9;
+        this.droneGyro2.rotation.z = t * 1.2;
+
+        // Пульсация дрона во время озвучки
+        const targetScale = isSpeaking ? 1.15 + Math.sin(t * 18) * 0.12 : 1.0;
+        this.droneCore.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.18);
+
+        // Возврат цвета дрона в спокойное состояние
+        if (this.stateTimer > 0) {
+          this.stateTimer -= 0.016;
+          if (this.droneState === 'happy') {
+            this.droneCore.rotation.y += 0.15;
+          } else if (this.droneState === 'error') {
+            this.drone.position.x = Math.sin(t * 45) * 0.18;
+          }
+          if (this.stateTimer <= 0) {
+            this.droneState = 'idle';
+            this.drone.position.x = 0;
+            this.coreMat.color.setHex(0x38bdf8);
+            this.coreMat.emissive.setHex(0x0284c7);
+            this.gyroMat.color.setHex(0x22d3ee);
+            this.mainLight.color.setHex(0x38bdf8);
+          }
+        }
+
+        // Обновление частиц салюта
+        for (let i = this.burstParticles.length - 1; i >= 0; i--) {
+          const p = this.burstParticles[i];
+          p.position.x += p.userData.vx;
+          p.position.y += p.userData.vy;
+          p.position.z += p.userData.vz;
+          p.userData.vy -= 0.004;
+          p.userData.life -= 0.022;
+          p.scale.setScalar(Math.max(0.01, p.userData.life));
+          if (p.userData.life <= 0) {
+            this.scene.remove(p);
+            this.burstParticles.splice(i, 1);
+          }
+        }
+
+        this.stars.rotation.y = t * 0.02;
+        this.renderer.render(this.scene, this.camera);
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 5. ГЛАВНЫЙ КОНТРОЛЛЕР ИГРЫ И РЕЖИМОВ
+     * ============================================================================
+     */
+    class LessonGameApp {
+      constructor() {
+        this.sfx = new SoundFX();
+        this.voice = new VoiceEngine();
+        this.arena = null;
+
+        this.score = 0;
+        this.streak = 0;
+        this.masteredIds = new Set();
+        this.bestSprintScore = Number(localStorage.getItem('lesson81_sprint_best') || 0);
+
+        // Состояние Режима 1 (Аудио-выбор)
+        this.acQueue = [];
+        this.acIndex = 0;
+        this.acAnswered = false;
+        this.acRevealed = false;
+
+        // Состояние Режима 2 (Конструктор)
+        this.bldQueue = [];
+        this.bldIndex = 0;
+        this.bldSelectedWords = [];
+        this.bldBankWords = [];
+        this.bldChecked = false;
+
+        // Состояние Режима 3 (Спринт)
+        this.sprTimerId = null;
+        this.sprTimeLeft = 60;
+        this.sprScore = 0;
+        this.sprCurrent = null;
+        this.sprDir = 'en-ru';
+
+        // Состояние Фонового Плеера
+        this.podList = [...LESSON_PHRASES];
+        this.podIndex = 0;
+        this.podPlaying = false;
+        this.podShuffle = false;
+        this.podLoopId = 0;
+      }
+
+      init() {
+        this.arena = new CyberArena3D('canvas-container');
+        document.getElementById('menu-best-sprint').textContent = this.bestSprintScore;
+        this.renderDictionary();
+        this.updateStatsUI();
+
+        const loop = (time) => {
+          this.arena.update(time, this.voice.isSpeaking);
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+
+      // Утилита перемешивания массива
+      shuffle(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      showToast(msg) {
+        const box = document.getElementById('toast-box');
+        const content = document.getElementById('toast-content');
+        content.textContent = msg;
+        box.classList.remove('opacity-0', '-translate-y-3');
+        box.classList.add('opacity-100', 'translate-y-0');
+        clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(() => {
+          box.classList.add('opacity-0', '-translate-y-3');
+          box.classList.remove('opacity-100', 'translate-y-0');
+        }, 2400);
+      }
+
+      updateStatsUI() {
+        document.getElementById('stat-score').textContent = this.score;
+        document.getElementById('stat-streak').textContent = this.streak;
+        document.getElementById('stat-mastered').textContent = `${this.masteredIds.size}/37`;
+        document.getElementById('menu-best-sprint').textContent = this.bestSprintScore;
+      }
+
+      addPoints(basePts, phraseId) {
+        this.streak += 1;
+        const bonus = Math.min(50, (this.streak - 1) * 5);
+        this.score += basePts + bonus;
+        if (phraseId) this.masteredIds.add(phraseId);
+        this.updateStatsUI();
+      }
+
+      resetStreak() {
+        this.streak = 0;
+        this.updateStatsUI();
+      }
+
+      showScreen(screenName) {
+        this.sfx.click();
+        this.stopPodcast();
+        if (this.sprTimerId) {
+          clearInterval(this.sprTimerId);
+          this.sprTimerId = null;
+        }
+        this.voice.stop();
+
+        ['menu', 'audio-choice', 'builder', 'sprint', 'podcast'].forEach((id) => {
+          const el = document.getElementById(`screen-${id}`);
+          if (el) el.classList.toggle('hidden', id !== screenName);
+        });
+      }
+
+      toggleModal(modalId, show) {
+        this.sfx.click();
+        const el = document.getElementById(modalId);
+        if (el) el.classList.toggle('hidden', !show);
+      }
+
+      startMode(mode) {
+        this.showScreen(mode);
+        if (mode === 'audio-choice') {
+          this.acQueue = this.shuffle(LESSON_PHRASES).slice(0, 12);
+          this.acIndex = 0;
+          this.loadAudioChoiceQuestion();
+        } else if (mode === 'builder') {
+          this.bldQueue = this.shuffle(LESSON_PHRASES).slice(0, 10);
+          this.bldIndex = 0;
+          this.loadBuilderQuestion();
+        } else if (mode === 'sprint') {
+          this.startSprintGame();
+        } else if (mode === 'podcast') {
+          this.updatePodcastUI();
+        }
+      }
+
+      /* ---------------- РЕЖИМ 1: АУДИО-ВЫБОР ---------------- */
+      loadAudioChoiceQuestion() {
+        if (this.acIndex >= this.acQueue.length) {
+          this.sfx.levelUp();
+          this.arena.triggerReaction('happy');
+          this.showToast('🎉 Раунд «Аудио-выбор» пройден! Отличная работа!');
+          this.showScreen('menu');
+          return;
+        }
+
+        this.acAnswered = false;
+        this.acRevealed = false;
+        const current = this.acQueue[this.acIndex];
+
+        document.getElementById('ac-progress').textContent = `Вопрос ${this.acIndex + 1} / ${this.acQueue.length}`;
+        document.getElementById('ac-en-text').textContent = '•••• ••••• •••••';
+        document.getElementById('ac-reveal-btn').innerHTML = '<span>👁️</span><span>Показать текст</span>';
+        document.getElementById('ac-feedback').classList.add('hidden');
+
+        // Подбираем 3 неправильных перевода + 1 правильный
+        const distractors = this.shuffle(
+          LESSON_PHRASES.filter(p => p.id !== current.id && p.ru !== current.ru)
+        ).slice(0, 3);
+        const options = this.shuffle([current, ...distractors]);
+
+        const container = document.getElementById('ac-options');
+        container.innerHTML = '';
+
+        options.forEach((opt) => {
+          const btn = document.createElement('button');
+          btn.className = 'glass-card p-4 rounded-2xl text-left text-sm sm:text-base font-semibold text-white cursor-pointer flex items-center justify-between gap-2';
+          btn.innerHTML = `<span>${opt.ru}</span><span class="text-xs text-slate-400 opacity-0 status-icon"></span>`;
+          btn.onclick = () => this.handleAudioChoiceAnswer(btn, opt, current);
+          container.appendChild(btn);
+        });
+
+        // Автоматически озвучиваем фразу на английском (Голос 1)
+        setTimeout(() => this.voice.speak(current.en, 'en'), 250);
+      }
+
+      replayCurrentAudio(rate = 1.0) {
+        this.sfx.click();
+        const current = this.acQueue[this.acIndex];
+        if (current) {
+          const finalRate = rate === 1.0 ? this.voice.enRate : rate;
+          this.voice.speak(current.en, 'en', finalRate);
+        }
+      }
+
+      toggleRevealEn() {
+        this.sfx.click();
+        const current = this.acQueue[this.acIndex];
+        if (!current) return;
+        this.acRevealed = !this.acRevealed;
+        document.getElementById('ac-en-text').textContent = this.acRevealed ? current.en : '•••• ••••• •••••';
+        document.getElementById('ac-reveal-btn').innerHTML = this.acRevealed
+          ? '<span>🙈</span><span>Скрыть текст</span>'
+          : '<span>👁️</span><span>Показать текст</span>';
+      }
+
+      async handleAudioChoiceAnswer(btnEl, chosen, correct) {
+        if (this.acAnswered) return;
+        this.acAnswered = true;
+
+        // Показываем английскую фразу
+        document.getElementById('ac-en-text').textContent = correct.en;
+
+        const allBtns = document.querySelectorAll('#ac-options button');
+        allBtns.forEach(b => b.disabled = true);
+
+        const fbBox = document.getElementById('ac-feedback');
+        const fbText = document.getElementById('ac-feedback-text');
+        fbBox.classList.remove('hidden', 'bg-emerald-500/20', 'border-emerald-400/40', 'bg-rose-500/20', 'border-rose-400/40');
+
+        if (chosen.id === correct.id) {
+          this.sfx.success();
+          this.arena.triggerReaction('happy');
+          this.addPoints(20, correct.id);
+          btnEl.classList.add('border-emerald-400', 'bg-emerald-500/25');
+          btnEl.querySelector('.status-icon').textContent = '✓';
+          btnEl.querySelector('.status-icon').classList.remove('opacity-0');
+          fbBox.classList.add('bg-emerald-500/20', 'border', 'border-emerald-400/40');
+          fbText.innerHTML = `<span class="text-emerald-300">Верно!</span> «${correct.en}» — ${correct.ru}`;
+        } else {
+          this.sfx.error();
+          this.arena.triggerReaction('error');
+          this.resetStreak();
+          btnEl.classList.add('border-rose-400', 'bg-rose-500/25');
+          btnEl.querySelector('.status-icon').textContent = '✕';
+          btnEl.querySelector('.status-icon').classList.remove('opacity-0');
+
+          // Подсвечиваем правильный вариант
+          allBtns.forEach((b) => {
+            if (b.textContent.includes(correct.ru)) {
+              b.classList.add('border-emerald-400', 'bg-emerald-500/20');
+            }
+          });
+          fbBox.classList.add('bg-rose-500/20', 'border', 'border-rose-400/40');
+          fbText.innerHTML = `<span class="text-rose-300">Ошибка.</span> Правильно: <span class="text-white">${correct.ru}</span>`;
+        }
+
+        // Озвучиваем перевод Голосом 2 для закрепления
+        await this.voice.speak(correct.ru, 'ru');
+      }
+
+      nextAudioChoice() {
+        this.sfx.click();
+        this.acIndex += 1;
+        this.loadAudioChoiceQuestion();
+      }
+
+      /* ---------------- РЕЖИМ 2: 3D-КОНСТРУКТОР ---------------- */
+      loadBuilderQuestion() {
+        if (this.bldIndex >= this.bldQueue.length) {
+          this.sfx.levelUp();
+          this.arena.triggerReaction('happy');
+          this.showToast('🧩 Все фразы конструктора собраны! Супер!');
+          this.showScreen('menu');
+          return;
+        }
+
+        this.bldChecked = false;
+        this.bldSelectedWords = [];
+        const current = this.bldQueue[this.bldIndex];
+
+        document.getElementById('bld-progress').textContent = `Фраза ${this.bldIndex + 1} / ${this.bldQueue.length}`;
+        document.getElementById('bld-ru-prompt').textContent = current.ru;
+        document.getElementById('bld-feedback').textContent = '';
+        document.getElementById('bld-check-btn').classList.remove('hidden');
+        document.getElementById('bld-next-btn').classList.add('hidden');
+
+        // Разбиваем фразу на слова и добавляем 2 слова-ловушки (например, doesn't вместо don't)
+        const words = current.en.split(' ');
+        const traps = [];
+        if (words.includes("don't")) traps.push("doesn't");
+        if (words.includes("doesn't")) traps.push("don't");
+        if (words.includes("want")) traps.push("wants");
+        if (words.includes("wants")) traps.push("want");
+        if (traps.length < 2) traps.push("not", "is");
+
+        const combined = [...words, ...traps.slice(0, 2)];
+        this.bldBankWords = this.shuffle(
+          combined.map((word, idx) => ({ id: idx, text: word, used: false }))
+        );
+
+        this.renderBuilderUI();
+        setTimeout(() => this.voice.speak(current.ru, 'ru'), 200);
+      }
+
+      renderBuilderUI() {
+        const answerZone = document.getElementById('bld-answer-zone');
+        const bankZone = document.getElementById('bld-word-bank');
+
+        answerZone.innerHTML = '';
+        if (this.bldSelectedWords.length === 0) {
+          answerZone.innerHTML = '<span class="text-xs text-slate-500 italic">Нажимайте на слова ниже...</span>';
+        } else {
+          this.bldSelectedWords.forEach((item, idx) => {
+            const chip = document.createElement('button');
+            chip.className = 'px-3.5 py-2 rounded-xl bg-indigo-500/35 border border-indigo-400/70 text-white font-bold text-sm sm:text-base hover:bg-rose-500/30 transition cursor-pointer';
+            chip.textContent = item.text;
+            chip.onclick = () => {
+              if (this.bldChecked) return;
+              this.sfx.click();
+              item.used = false;
+              this.bldSelectedWords.splice(idx, 1);
+              this.renderBuilderUI();
+            };
+            answerZone.appendChild(chip);
+          });
+        }
+
+        bankZone.innerHTML = '';
+        this.bldBankWords.forEach((item) => {
+          const btn = document.createElement('button');
+          btn.disabled = item.used || this.bldChecked;
+          btn.className = item.used
+            ? 'px-3.5 py-2 rounded-xl bg-slate-900/40 border border-slate-800 text-slate-600 font-semibold text-sm sm:text-base opacity-40'
+            : 'glass-card px-3.5 py-2 rounded-xl text-cyan-200 font-bold text-sm sm:text-base cursor-pointer';
+          btn.textContent = item.text;
+          btn.onclick = () => {
+            this.sfx.click();
+            item.used = true;
+            this.bldSelectedWords.push(item);
+            this.renderBuilderUI();
+          };
+          bankZone.appendChild(btn);
+        });
+      }
+
+      clearBuilder() {
+        if (this.bldChecked) return;
+        this.sfx.click();
+        this.bldSelectedWords.forEach(w => w.used = false);
+        this.bldSelectedWords = [];
+        this.renderBuilderUI();
+      }
+
+      speakRuPrompt() {
+        const current = this.bldQueue[this.bldIndex];
+        if (current) this.voice.speak(current.ru, 'ru');
+      }
+
+      speakEnHint() {
+        const current = this.bldQueue[this.bldIndex];
+        if (current) this.voice.speak(current.en, 'en', 0.85);
+      }
+
+      async checkBuilder() {
+        if (this.bldChecked) return;
+        const current = this.bldQueue[this.bldIndex];
+        const userSentence = this.bldSelectedWords.map(w => w.text).join(' ').trim();
+
+        if (!userSentence) {
+          this.showToast('Сначала выберите слова для предложения!');
+          return;
+        }
+
+        this.bldChecked = true;
+        this.renderBuilderUI();
+
+        const fb = document.getElementById('bld-feedback');
+        if (userSentence.toLowerCase() === current.en.toLowerCase()) {
+          this.sfx.success();
+          this.arena.triggerReaction('happy');
+          this.addPoints(30, current.id);
+          fb.innerHTML = `<span class="text-emerald-300">Идеально! ✓</span> ${current.en}`;
+        } else {
+          this.sfx.error();
+          this.arena.triggerReaction('error');
+          this.resetStreak();
+          fb.innerHTML = `<span class="text-rose-300">Правильно:</span> <span class="text-cyan-300 font-bold">${current.en}</span>`;
+        }
+
+        document.getElementById('bld-check-btn').classList.add('hidden');
+        document.getElementById('bld-next-btn').classList.remove('hidden');
+
+        // Озвучиваем правильную английскую фразу Голосом 1
+        await this.voice.speak(current.en, 'en');
+      }
+
+      nextBuilder() {
+        this.sfx.click();
+        this.bldIndex += 1;
+        this.loadBuilderQuestion();
+      }
+
+      /* ---------------- РЕЖИМ 3: СПРИНТ-ДУЭЛЬ 60 СЕК ---------------- */
+      startSprintGame() {
+        this.sprTimeLeft = 60;
+        this.sprScore = 0;
+        document.getElementById('spr-timer').textContent = '60';
+        document.getElementById('spr-round-score').textContent = '0';
+        document.getElementById('spr-play-area').classList.remove('hidden');
+        document.getElementById('spr-gameover').classList.add('hidden');
+
+        this.nextSprintQuestion();
+
+        if (this.sprTimerId) clearInterval(this.sprTimerId);
+        this.sprTimerId = setInterval(() => {
+          this.sprTimeLeft -= 1;
+          document.getElementById('spr-timer').textContent = String(this.sprTimeLeft);
+          if (this.sprTimeLeft <= 0) {
+            this.finishSprintGame();
+          }
+        }, 1000);
+      }
+
+      nextSprintQuestion() {
+        const q = LESSON_PHRASES[Math.floor(Math.random() * LESSON_PHRASES.length)];
+        this.sprCurrent = q;
+        this.sprDir = Math.random() > 0.45 ? 'en-ru' : 'ru-en';
+
+        document.getElementById('spr-direction-badge').textContent =
+          this.sprDir === 'en-ru' ? '🇬🇧 EN → 🇷🇺 RU' : '🇷🇺 RU → 🇬🇧 EN';
+        document.getElementById('spr-question').textContent =
+          this.sprDir === 'en-ru' ? q.en : q.ru;
+
+        const distractors = this.shuffle(
+          LESSON_PHRASES.filter(item => item.id !== q.id && item.ru !== q.ru)
+        ).slice(0, 3);
+        const options = this.shuffle([q, ...distractors]);
+
+        const container = document.getElementById('spr-options');
+        container.innerHTML = '';
+
+        options.forEach((opt) => {
+          const btn = document.createElement('button');
+          btn.className = 'glass-card p-3.5 sm:p-4 rounded-2xl text-left text-sm sm:text-base font-semibold text-white cursor-pointer';
+          btn.textContent = this.sprDir === 'en-ru' ? opt.ru : opt.en;
+          btn.onclick = () => {
+            if (opt.id === q.id) {
+              this.sfx.success();
+              this.arena.triggerReaction('happy');
+              this.sprScore += 25 + Math.min(25, this.streak * 5);
+              this.addPoints(25, q.id);
+              document.getElementById('spr-round-score').textContent = String(this.sprScore);
+              this.nextSprintQuestion();
+            } else {
+              this.sfx.error();
+              this.arena.triggerReaction('error');
+              this.resetStreak();
+              btn.classList.add('border-rose-500', 'bg-rose-500/25');
+              btn.disabled = true;
+            }
+          };
+          container.appendChild(btn);
+        });
+
+        this.voice.speak(this.sprDir === 'en-ru' ? q.en : q.ru, this.sprDir === 'en-ru' ? 'en' : 'ru', 1.1);
+      }
+
+      replaySprintAudio() {
+        if (!this.sprCurrent) return;
+        this.voice.speak(
+          this.sprDir === 'en-ru' ? this.sprCurrent.en : this.sprCurrent.ru,
+          this.sprDir === 'en-ru' ? 'en' : 'ru'
+        );
+      }
+
+      finishSprintGame() {
+        clearInterval(this.sprTimerId);
+        this.sprTimerId = null;
+        this.sfx.levelUp();
+        this.arena.triggerReaction('happy');
+
+        if (this.sprScore > this.bestSprintScore) {
+          this.bestSprintScore = this.sprScore;
+          localStorage.setItem('lesson81_sprint_best', String(this.bestSprintScore));
+          this.updateStatsUI();
+        }
+
+        document.getElementById('spr-play-area').classList.add('hidden');
+        document.getElementById('spr-gameover').classList.remove('hidden');
+        document.getElementById('spr-final-score').textContent = String(this.sprScore);
+        document.getElementById('spr-final-best').textContent = String(this.bestSprintScore);
+      }
+
+      /* ---------------- ФОНОВЫЙ АУДИОПЛЕЕР С ПЕРЕВОДОМ ---------------- */
+      updatePodcastUI() {
+        const item = this.podList[this.podIndex];
+        if (!item) return;
+        document.getElementById('pod-counter').textContent = `Фраза ${this.podIndex + 1} из ${this.podList.length}`;
+        document.getElementById('pod-en').textContent = item.en;
+        document.getElementById('pod-ru').textContent = item.ru;
+      }
+
+      togglePodcastShuffle() {
+        this.sfx.click();
+        this.podShuffle = !this.podShuffle;
+        const btn = document.getElementById('pod-shuffle-btn');
+        if (this.podShuffle) {
+          this.podList = this.shuffle(LESSON_PHRASES);
+          btn.textContent = 'Вперемешку 🔀';
+        } else {
+          this.podList = [...LESSON_PHRASES];
+          btn.textContent = 'По порядку 1→37';
+        }
+        this.podIndex = 0;
+        this.updatePodcastUI();
+      }
+
+      togglePodcastPlay() {
+        this.sfx.click();
+        if (this.podPlaying) {
+          this.stopPodcast();
+        } else {
+          this.startPodcastLoop();
+        }
+      }
+
+      stopPodcast() {
+        this.podPlaying = false;
+        this.podLoopId += 1;
+        this.voice.stop();
+        const btn = document.getElementById('pod-play-btn');
+        const vis = document.getElementById('pod-visualizer');
+        const badge = document.getElementById('pod-speaker-badge');
+        if (btn) btn.innerHTML = '<span>▶</span><span>Старт</span>';
+        if (vis) vis.classList.add('opacity-40');
+        if (badge) badge.textContent = 'На паузе';
+      }
+
+      async startPodcastLoop() {
+        this.podPlaying = true;
+        const currentLoop = ++this.podLoopId;
+        const btn = document.getElementById('pod-play-btn');
+        const vis = document.getElementById('pod-visualizer');
+        const badge = document.getElementById('pod-speaker-badge');
+
+        btn.innerHTML = '<span>⏸</span><span>Пауза</span>';
+        vis.classList.remove('opacity-40');
+
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+        while (this.podPlaying && currentLoop === this.podLoopId) {
+          const item = this.podList[this.podIndex];
+          this.updatePodcastUI();
+
+          const pauseMs = Number(document.getElementById('pod-pause-select').value || 1300);
+          const pattern = document.getElementById('pod-pattern-select').value || 'en-ru';
+
+          if (pattern === 'en-ru') {
+            badge.textContent = '🇬🇧 Голос 1: Английский';
+            badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40';
+            await this.voice.speak(item.en, 'en');
+            if (!this.podPlaying || currentLoop !== this.podLoopId) break;
+
+            await wait(Math.round(pauseMs * 0.65));
+            if (!this.podPlaying || currentLoop !== this.podLoopId) break;
+
+            badge.textContent = '🇷🇺 Голос 2: Перевод';
+            badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+            await this.voice.speak(item.ru, 'ru');
+          } else if (pattern === 'en-ru-en') {
+            badge.textContent = '🇬🇧 Голос 1: Английский';
+            await this.voice.speak(item.en, 'en');
+            if (!this.podPlaying || currentLoop !== this.podLoopId) break;
+            await wait(Math.round(pauseMs * 0.6));
+
+            badge.textContent = '🇷🇺 Голос 2: Перевод';
+            await this.voice.speak(item.ru, 'ru');
+            if (!this.podPlaying || currentLoop !== this.podLoopId) break;
+            await wait(Math.round(pauseMs * 0.6));
+
+            badge.textContent = '🇬🇧 Голос 1: Закрепление';
+            await this.voice.speak(item.en, 'en');
+          } else {
+            badge.textContent = '🇷🇺 Голос 2: Вспомните перевод...';
+            await this.voice.speak(item.ru, 'ru');
+            if (!this.podPlaying || currentLoop !== this.podLoopId) break;
+            await wait(pauseMs + 400);
+
+            badge.textContent = '🇬🇧 Голос 1: Проверка';
+            await this.voice.speak(item.en, 'en');
+          }
+
+          if (!this.podPlaying || currentLoop !== this.podLoopId) break;
+          await wait(pauseMs);
+
+          this.podIndex = (this.podIndex + 1) % this.podList.length;
+        }
+      }
+
+      podcastNext() {
+        this.sfx.click();
+        const wasPlaying = this.podPlaying;
+        this.stopPodcast();
+        this.podIndex = (this.podIndex + 1) % this.podList.length;
+        this.updatePodcastUI();
+        if (wasPlaying) this.startPodcastLoop();
+      }
+
+      podcastPrev() {
+        this.sfx.click();
+        const wasPlaying = this.podPlaying;
+        this.stopPodcast();
+        this.podIndex = (this.podIndex - 1 + this.podList.length) % this.podList.length;
+        this.updatePodcastUI();
+        if (wasPlaying) this.startPodcastLoop();
+      }
+
+      /* ---------------- НАСТРОЙКИ ГОЛОСОВ И СЛОВАРЬ ---------------- */
+      populateVoiceSelectors() {
+        const enSel = document.getElementById('select-en-voice');
+        const ruSel = document.getElementById('select-ru-voice');
+        if (!enSel || !ruSel) return;
+
+        const allVoices = this.voice.voices;
+        const enVoices = allVoices.filter(v => v.lang.toLowerCase().startsWith('en'));
+        const ruVoices = allVoices.filter(v => v.lang.toLowerCase().startsWith('ru'));
+
+        const fill = (select, list, fallback, selectedName) => {
+          select.innerHTML = '';
+          const source = list.length ? list : fallback;
+          source.forEach((v) => {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `${v.name} (${v.lang})`;
+            if (v.name === selectedName) opt.selected = true;
+            select.appendChild(opt);
+          });
+        };
+
+        fill(enSel, enVoices, allVoices, this.voice.enVoiceName);
+        fill(ruSel, ruVoices, allVoices, this.voice.ruVoiceName);
+        this.updateVoiceSummary();
+      }
+
+      saveVoiceSettings() {
+        const enSel = document.getElementById('select-en-voice');
+        const ruSel = document.getElementById('select-ru-voice');
+        if (enSel && enSel.value) this.voice.enVoiceName = enSel.value;
+        if (ruSel && ruSel.value) this.voice.ruVoiceName = ruSel.value;
+
+        this.voice.enPitch = parseFloat(document.getElementById('range-en-pitch').value);
+        this.voice.enRate = parseFloat(document.getElementById('range-en-rate').value);
+        this.voice.ruPitch = parseFloat(document.getElementById('range-ru-pitch').value);
+        this.voice.ruRate = parseFloat(document.getElementById('range-ru-rate').value);
+
+        document.getElementById('val-en-pitch').textContent = this.voice.enPitch.toFixed(2);
+        document.getElementById('val-en-rate').textContent = this.voice.enRate.toFixed(2);
+        document.getElementById('val-ru-pitch').textContent = this.voice.ruPitch.toFixed(2);
+        document.getElementById('val-ru-rate').textContent = this.voice.ruRate.toFixed(2);
+
+        this.updateVoiceSummary();
+      }
+
+      updateVoiceSummary() {
+        const enShort = (this.voice.enVoiceName || 'EN Авто').split(' ')[0];
+        const ruShort = (this.voice.ruVoiceName || 'RU Авто').split(' ')[0];
+        document.getElementById('summary-en-voice').textContent = `${enShort} (тон ${this.voice.enPitch})`;
+        document.getElementById('summary-ru-voice').textContent = `${ruShort} (тон ${this.voice.ruPitch})`;
+      }
+
+      previewEnVoice() {
+        this.voice.speak("He doesn't work there, he works here.", 'en');
+      }
+
+      previewRuVoice() {
+        this.voice.speak("Он не работает там, он работает здесь.", 'ru');
+      }
+
+      async testDualVoices() {
+        this.sfx.click();
+        await this.voice.speak("You don't try to learn English", 'en');
+        await new Promise(r => setTimeout(r, 350));
+        await this.voice.speak("Ты не пытаешься выучить английский", 'ru');
+      }
+
+      toggleSfx() {
+        this.sfx.enabled = !this.sfx.enabled;
+        const btn = document.getElementById('btn-toggle-sfx');
+        btn.textContent = this.sfx.enabled ? 'Включены 🔊' : 'Выключены 🔇';
+        if (this.sfx.enabled) this.sfx.click();
+      }
+
+      renderDictionary() {
+        const list = document.getElementById('dict-list');
+        if (!list) return;
+        list.innerHTML = '';
+
+        LESSON_PHRASES.forEach((item) => {
+          const row = document.createElement('div');
+          row.className = 'glass-card p-3 rounded-2xl flex items-center justify-between gap-3';
+          row.innerHTML = `
+            <div class="flex items-start gap-2.5">
+              <span class="text-xs font-bold text-cyan-400 bg-cyan-500/15 px-2 py-0.5 rounded-lg mt-0.5">${item.id}</span>
+              <div>
+                <div class="text-sm font-bold text-white">${item.en}</div>
+                <div class="text-xs text-slate-300 mt-0.5">${item.ru}</div>
+              </div>
+            </div>
+            <button class="shrink-0 px-3 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/40 text-xs font-semibold text-cyan-200 cursor-pointer">
+              🔊 EN+RU
+            </button>
+          `;
+          row.querySelector('button').onclick = async () => {
+            this.sfx.click();
+            await this.voice.speak(item.en, 'en');
+            await new Promise(r => setTimeout(r, 300));
+            await this.voice.speak(item.ru, 'ru');
+          };
+          list.appendChild(row);
+        });
+      }
+    }
+
+    const app = new LessonGameApp();
+    window.onload = function () {
+      app.init();
+    };
+  </script>
+</body>
+</html>
