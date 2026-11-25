@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>English Quest 3D — Lesson 9</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --accent: #f093fb;
+            --success: #00e676;
+            --danger: #ff5252;
+            --bg-dark: #070b19;
+            --glass: rgba(15, 23, 42, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.14);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 14px;
+            pointer-events: none;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 10px 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-3d {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #050814;
+            font-weight: 900;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .title-text {
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .stat-pill {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 5px 11px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Mode Selector */
+        .modes-nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .mode-btn {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            color: #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--primary);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 172, 254, 0.25));
+            border-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 0 18px rgba(0, 242, 254, 0.35);
+        }
+
+        /* Main Game Card */
+        .center-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+            overflow-y: auto;
+        }
+
+        .game-card {
+            width: 100%;
+            max-width: 680px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 26px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 20px rgba(255, 255, 255, 0.04);
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .question-box {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .lang-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 99px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .lang-en {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+        }
+
+        .lang-ru {
+            background: rgba(240, 147, 251, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(240, 147, 251, 0.3);
+        }
+
+        .question-text {
+            font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+            font-weight: 700;
+            line-height: 1.35;
+            margin-bottom: 14px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+
+        .audio-controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .speak-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .speak-btn:hover {
+            background: rgba(255, 255, 255, 0.16);
+            transform: scale(1.03);
+        }
+
+        .speak-btn.en-voice {
+            border-color: rgba(0, 242, 254, 0.45);
+            color: #a5f3fc;
+        }
+
+        .speak-btn.ru-voice {
+            border-color: rgba(240, 147, 251, 0.45);
+            color: #f5d0fe;
+        }
+
+        /* Quiz Options */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            padding: 14px 16px;
+            color: #f8fafc;
+            font-size: 0.98rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.3;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .option-btn.correct {
+            background: rgba(0, 230, 118, 0.22);
+            border-color: var(--success);
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+        }
+
+        .option-btn.wrong {
+            background: rgba(255, 82, 82, 0.22);
+            border-color: var(--danger);
+            color: #ffffff;
+        }
+
+        .option-index {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Builder Mode */
+        .builder-answer-zone {
+            min-height: 58px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px dashed rgba(0, 242, 254, 0.45);
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .word-chip {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(0, 242, 254, 0.35);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s, opacity 0.2s;
+        }
+
+        .word-chip:active {
+            transform: scale(0.95);
+        }
+
+        .word-chip.used {
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #050814;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.35);
+            transition: transform 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Background Audio Player Mode */
+        .bg-player-box {
+            text-align: center;
+        }
+
+        .bg-sub-text {
+            font-size: 1.15rem;
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            min-height: 28px;
+        }
+
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .circle-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .circle-btn.play-main {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #050814;
+            font-size: 1.5rem;
+            border: none;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.45);
+        }
+
+        .circle-btn:hover {
+            transform: scale(1.07);
+        }
+
+        .bg-options {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .toggle-pill {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .toggle-pill.on {
+            border-color: var(--success);
+            background: rgba(0, 230, 118, 0.15);
+        }
+
+        /* Feedback Toast */
+        .feedback-banner {
+            margin-top: 14px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        /* Bottom Bar */
+        .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            padding: 0 8px;
+        }
+
+        .sound-toggle {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            .game-card {
+                padding: 18px 14px;
+                border-radius: 20px;
+            }
+            .title-text {
+                font-size: 0.9rem;
+            }
+            .mode-btn {
+                padding: 7px 10px;
+                font-size: 0.78rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div>
+            <div class="top-bar interactive">
+                <div class="brand">
+                    <span class="badge-3d">3D</span>
+                    <span class="title-text">English Quest: Lesson 9</span>
+                </div>
+                <div class="stats">
+                    <div class="stat-pill" title="Очки">⭐ <span id="score-val">0</span></div>
+                    <div class="stat-pill" title="Серия">🔥 <span id="streak-val">0</span></div>
+                </div>
+            </div>
+
+            <div class="modes-nav interactive">
+                <button class="mode-btn active" onclick="setMode('en-ru')">🇬🇧 → 🇷🇺 Викторина</button>
+                <button class="mode-btn" onclick="setMode('ru-en')">🇷🇺 → 🇬🇧 Перевод</button>
+                <button class="mode-btn" onclick="setMode('builder')">🧩 Собери фразу</button>
+                <button class="mode-btn" onclick="setMode('background')">🎧 Аудио-фон</button>
+            </div>
+        </div>
+
+        <div class="center-stage">
+            <div class="game-card interactive" id="game-card">
+                <div class="card-header">
+                    <span id="mode-label">Режим: Английский → Русский</span>
+                    <span id="counter-label">1 / 22</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+
+                <!-- Dynamic Game Content -->
+                <div id="game-content"></div>
+
+                <div class="feedback-banner" id="feedback-banner"></div>
+            </div>
+        </div>
+
+        <div class="bottom-bar interactive">
+            <span>Урок 9 • Present Simple (don't / doesn't)</span>
+            <button class="sound-toggle" id="sfx-btn" onclick="toggleSfx()">🔊 Звуки: ВКЛ</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. ДАННЫЕ УРОКА №9 (ИЗ ФАЙЛА ДАРСИ 9.XLSX)
+        // ==========================================
+        const lessonData = [
+            { id: 1, en: "This thing doesn't interest me", ru: "Эта вещь не интересует меня" },
+            { id: 2, en: "These things don't attract me", ru: "Эти вещи не привлекают меня" },
+            { id: 3, en: "That thing doesn't seem interesting", ru: "Та вещь не кажется интересной" },
+            { id: 4, en: "Those things don't seem strange", ru: "Те вещи не кажутся странными" },
+            { id: 5, en: "Those lessons don't seem useful", ru: "Те уроки не кажутся полезными" },
+            { id: 6, en: "Those lessons seem very useful", ru: "Те уроки кажутся очень полезными" },
+            { id: 7, en: "That method doesn't help", ru: "Этот метод не помогает" },
+            { id: 8, en: "This method really helps", ru: "Этот метод реально помогает" },
+            { id: 9, en: "My brother doesn't want to think about his future", ru: "Мой брат не хочет думать о своём будущем" },
+            { id: 10, en: "My sister doesn't know this person", ru: "Моя сестра не знает этого человека" },
+            { id: 11, en: "My friends don't recommend this hotel", ru: "Мои друзья не рекомендуют этот отель" },
+            { id: 12, en: "His son doesn't want to become a doctor", ru: "Его сын не хочет стать доктором" },
+            { id: 13, en: "Her daughter doesn't want to study there", ru: "Её дочка не хочет учиться там" },
+            { id: 14, en: "His parents don't feel happy", ru: "Его родители не чувствуют себя счастливыми" },
+            { id: 15, en: "This person doesn't try to change his life", ru: "Этот человек не пытается изменить свою жизнь" },
+            { id: 16, en: "My boss doesn't see her", ru: "Мой босс не видит её" },
+            { id: 17, en: "My partner doesn't know him", ru: "Мой партнёр не знает его" },
+            { id: 18, en: "My friend and I don't call them", ru: "Мой друг и я не звоним им" },
+            { id: 19, en: "Our teacher doesn't believe us", ru: "Наш учитель не верит нам" },
+            { id: 20, en: "He thinks money doesn't bring people happiness", ru: "Он думает, деньги не приносят людям счастье" },
+            { id: 21, en: "She thinks money doesn't make people happy", ru: "Она думает, деньги не делают людей счастливыми" },
+            { id: 22, en: "I really want to make you happy", ru: "Я реально хочу сделать тебя счастливым" }
+        ];
+
+        // ==========================================
+        // 2. АУДИО ДВИЖОК (РАЗНЫЕ ЗВУКИ И ГОЛОСА EN / RU)
+        // ==========================================
+        let sfxEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(type) {
+            if (!sfxEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'en-chime') {
+                // Звонкий кристальный звук для английского
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.14); // A5
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            } else if (type === 'ru-chime') {
+                // Мягкий глубокий тёплый тон для русского
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(392.00, now); // G4
+                osc.frequency.exponentialRampToValueAtTime(293.66, now + 0.18); // D4
+                gain.gain.setValueAtTime(0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(783.99, now + 0.16);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(130, now + 0.25);
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                osc.start(now);
+                osc.stop(now + 0.28);
+            }
+        }
+
+        function speakText(text, lang, onEndCallback = null) {
+            if (!('speechSynthesis' in window)) {
+                if (onEndCallback) setTimeout(onEndCallback, 1200);
+                return;
+            }
+            window.speechSynthesis.cancel();
+
+            // Играем разный звуковой сигнал перед озвучкой EN и RU
+            playTone(lang === 'en' ? 'en-chime' : 'ru-chime');
+
+            setTimeout(() => {
+                const utter = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+
+                if (lang === 'en') {
+                    utter.lang = 'en-US';
+                    utter.rate = 0.94;
+                    utter.pitch = 1.08; // Более светлый и чёткий тембр для английского
+                    const enVoice = voices.find(v => v.lang.includes('en-US') && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Zira')))
+                                 || voices.find(v => v.lang.startsWith('en'));
+                    if (enVoice) utter.voice = enVoice;
+                } else {
+                    utter.lang = 'ru-RU';
+                    utter.rate = 0.98;
+                    utter.pitch = 0.92; // Более глубокий и спокойный тембр для русского
+                    const ruVoice = voices.find(v => v.lang.includes('ru') && (v.name.includes('Google') || v.name.includes('Irina') || v.name.includes('Pavel')))
+                                 || voices.find(v => v.lang.startsWith('ru'));
+                    if (ruVoice) utter.voice = ruVoice;
+                }
+
+                if (onEndCallback) {
+                    utter.onend = onEndCallback;
+                    utter.onerror = onEndCallback;
+                }
+
+                window.speechSynthesis.speak(utter);
+            }, 160);
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+
+        function toggleSfx() {
+            sfxEnabled = !sfxEnabled;
+            document.getElementById('sfx-btn').textContent = sfxEnabled ? '🔊 Звуки: ВКЛ' : '🔇 Звуки: ВЫКЛ';
+        }
+
+        // ==========================================
+        // 3. 3D СЦЕНА (THREE.JS)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x070b19, 0.035);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 14;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Освещение
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00f2fe, 2.2, 50);
+        pointLight1.position.set(8, 8, 10);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xf093fb, 2.2, 50);
+        pointLight2.position.set(-8, -8, 8);
+        scene.add(pointLight2);
+
+        // Центральный 3D кристалл
+        const coreGeo = new THREE.IcosahedronGeometry(3.2, 1);
+        const coreMat = new THREE.MeshStandardMaterial({
+            color: 0x1e293b,
+            emissive: 0x00f2fe,
+            emissiveIntensity: 0.25,
+            wireframe: true
+        });
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        scene.add(coreMesh);
+
+        // Внутреннее ядро
+        const innerGeo = new THREE.OctahedronGeometry(1.8, 0);
+        const innerMat = new THREE.MeshStandardMaterial({
+            color: 0x4facfe,
+            emissive: 0x3b82f6,
+            emissiveIntensity: 0.45,
+            roughness: 0.2,
+            metalness: 0.8
+        });
+        const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+        scene.add(innerMesh);
+
+        // Орбитальные кольца
+        const ringGeo = new THREE.TorusGeometry(5.2, 0.05, 16, 100);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe, transparent: true, opacity: 0.45 });
+        const ring1 = new THREE.Mesh(ringGeo, ringMat);
+        ring1.rotation.x = Math.PI / 3;
+        scene.add(ring1);
+
+        const ring2 = new THREE.Mesh(
+            new THREE.TorusGeometry(6.4, 0.04, 16, 100),
+            new THREE.MeshBasicMaterial({ color: 0xf093fb, transparent: true, opacity: 0.35 })
+        );
+        ring2.rotation.y = Math.PI / 4;
+        scene.add(ring2);
+
+        // Звёздное поле / частицы
+        const particlesCount = 450;
+        const posArray = new Float32Array(particlesCount * 3);
+        for (let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 45;
+        }
+        const particlesGeo = new THREE.BufferGeometry();
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({
+            size: 0.12,
+            color: 0x7dd3fc,
+            transparent: true,
+            opacity: 0.8
+        });
+        const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particlesMesh);
+
+        let pulseBoost = 0;
+        let targetColor = new THREE.Color(0x00f2fe);
+
+        function trigger3DEffect(status) {
+            pulseBoost = 0.15;
+            if (status === 'success') {
+                targetColor.setHex(0x00e676);
+            } else if (status === 'error') {
+                targetColor.setHex(0xff5252);
+            } else {
+                targetColor.setHex(0x00f2fe);
+            }
+            setTimeout(() => targetColor.setHex(0x00f2fe), 900);
+        }
+
+        // Реакция 3D на движение мыши / пальца
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            coreMesh.rotation.y += 0.004 + pulseBoost;
+            coreMesh.rotation.x += 0.002;
+            innerMesh.rotation.y -= 0.01 + pulseBoost;
+            innerMesh.rotation.z += 0.007;
+
+            ring1.rotation.z += 0.005;
+            ring2.rotation.x -= 0.004;
+            particlesMesh.rotation.y += 0.0008;
+
+            if (pulseBoost > 0) pulseBoost *= 0.94;
+
+            coreMat.emissive.lerp(targetColor, 0.08);
+            const scale = 1 + pulseBoost * 1.8;
+            innerMesh.scale.set(scale, scale, scale);
+
+            camera.position.x += (mouseX * 1.8 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 1.8 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+        animate3D();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // 4. ИГРОВАЯ ЛОГИКА И РЕЖИМЫ
+        // ==========================================
+        let currentMode = 'en-ru';
+        let currentIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let isAnswered = false;
+        let shuffledDeck = [...lessonData];
+
+        // Для конструктора слов
+        let selectedWords = [];
+        let targetWords = [];
+
+        // Для фонового плеера
+        let bgPlaying = false;
+        let bgTimer = null;
+        let bgIncludeRu = true;
+        let bgAutoNext = true;
+
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function updateStats() {
+            document.getElementById('score-val').textContent = score;
+            document.getElementById('streak-val').textContent = streak;
+            const pct = ((currentIndex + 1) / lessonData.length) * 100;
+            document.getElementById('progress-fill').style.width = `${pct}%`;
+            document.getElementById('counter-label').textContent = `${currentIndex + 1} / ${lessonData.length}`;
+        }
+
+        function showFeedback(text, isSuccess) {
+            const banner = document.getElementById('feedback-banner');
+            banner.style.display = 'block';
+            banner.textContent = text;
+            banner.style.background = isSuccess ? 'rgba(0, 230, 118, 0.18)' : 'rgba(255, 82, 82, 0.18)';
+            banner.style.color = isSuccess ? '#69f0ae' : '#ff8a80';
+            banner.style.border = `1px solid ${isSuccess ? '#00e676' : '#ff5252'}`;
+        }
+
+        function hideFeedback() {
+            document.getElementById('feedback-banner').style.display = 'none';
+        }
+
+        function setMode(mode) {
+            stopBackgroundAudio();
+            currentMode = mode;
+            currentIndex = 0;
+            isAnswered = false;
+
+            document.querySelectorAll('.mode-btn').forEach((btn, idx) => {
+                const modes = ['en-ru', 'ru-en', 'builder', 'background'];
+                btn.classList.toggle('active', modes[idx] === mode);
+            });
+
+            const labels = {
+                'en-ru': 'Режим: Английский → Русский',
+                'ru-en': 'Режим: Русский → Английский',
+                'builder': 'Режим: Собери предложение',
+                'background': 'Режим: Фоновое прослушивание'
+            };
+            document.getElementById('mode-label').textContent = labels[mode];
+
+            shuffledDeck = mode === 'background' ? [...lessonData] : shuffleArray(lessonData);
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            hideFeedback();
+            isAnswered = false;
+            updateStats();
+
+            const item = shuffledDeck[currentIndex];
+            const content = document.getElementById('game-content');
+
+            if (currentMode === 'en-ru' || currentMode === 'ru-en') {
+                const isEnToRu = currentMode === 'en-ru';
+                const questionText = isEnToRu ? item.en : item.ru;
+                const correctAnswer = isEnToRu ? item.ru : item.en;
+
+                // Генерация 3 дистракторов
+                const others = lessonData.filter(x => x.id !== item.id);
+                const distractors = shuffleArray(others).slice(0, 3).map(x => isEnToRu ? x.ru : x.en);
+                const choices = shuffleArray([correctAnswer, ...distractors]);
+
+                content.innerHTML = `
+                    <div class="question-box">
+                        <span class="lang-tag ${isEnToRu ? 'lang-en' : 'lang-ru'}">
+                            ${isEnToRu ? 'English' : 'Русский'}
+                        </span>
+                        <div class="question-text">${questionText}</div>
+                        <div class="audio-controls-row">
+                            <button class="speak-btn ${isEnToRu ? 'en-voice' : 'ru-voice'}" onclick="speakCurrentQuestion()">
+                                🔊 Озвучить ${isEnToRu ? '(EN)' : '(RU)'}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="options-grid">
+                        ${choices.map((choice, idx) => `
+                            <button class="option-btn" onclick="handleQuizAnswer(this, ${choice === correctAnswer})">
+                                <span class="option-index">${['A', 'B', 'C', 'D'][idx]}</span>
+                                <span>${choice}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Автоозвучка вопроса
+                speakText(questionText, isEnToRu ? 'en' : 'ru');
+            }
+            else if (currentMode === 'builder') {
+                targetWords = item.en.split(' ');
+                selectedWords = [];
+                const scrambled = shuffleArray(targetWords.map((w, i) => ({ word: w, idx: i })));
+
+                content.innerHTML = `
+                    <div class="question-box">
+                        <span class="lang-tag lang-ru">Переведите на английский</span>
+                        <div class="question-text">${item.ru}</div>
+                        <div class="audio-controls-row">
+                            <button class="speak-btn ru-voice" onclick="speakText('${item.ru.replace(/'/g, "\\'")}', 'ru')">
+                                🔊 Слушать (RU)
+                            </button>
+                            <button class="speak-btn en-voice" onclick="speakText('${item.en.replace(/'/g, "\\'")}', 'en')">
+                                💡 Подсказка (EN)
+                            </button>
+                        </div>
+                    </div>
+                    <div class="builder-answer-zone" id="answer-zone">
+                        <span style="color:#64748b; font-size:0.85rem;">Нажимайте на слова ниже...</span>
+                    </div>
+                    <div class="word-bank" id="word-bank">
+                        ${scrambled.map(obj => `
+                            <button class="word-chip" id="chip-${obj.idx}" onclick="pickWord(${obj.idx}, '${obj.word.replace(/'/g, "\\'")}')">
+                                ${obj.word}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <button class="action-btn" onclick="checkBuilderAnswer()">Проверить ответ</button>
+                `;
+
+                speakText(item.ru, 'ru');
+            }
+            else if (currentMode === 'background') {
+                content.innerHTML = `
+                    <div class="bg-player-box">
+                        <span class="lang-tag lang-en">Фоновый тренажёр • Фраза №${item.id}</span>
+                        <div class="question-text" style="color: #00f2fe; margin-top: 8px;">${item.en}</div>
+                        <div class="bg-sub-text">${item.ru}</div>
+
+                        <div class="audio-controls-row" style="margin-bottom: 18px;">
+                            <button class="speak-btn en-voice" onclick="speakText('${item.en.replace(/'/g, "\\'")}', 'en')">🇬🇧 Голос EN</button>
+                            <button class="speak-btn ru-voice" onclick="speakText('${item.ru.replace(/'/g, "\\'")}', 'ru')">🇷🇺 Голос RU</button>
+                        </div>
+
+                        <div class="player-controls">
+                            <button class="circle-btn" onclick="bgPrev()" title="Назад">⏮</button>
+                            <button class="circle-btn play-main" id="bg-play-btn" onclick="toggleBackgroundAudio()">
+                                ${bgPlaying ? '⏸' : '▶'}
+                            </button>
+                            <button class="circle-btn" onclick="bgNext()" title="Вперёд">⏭</button>
+                        </div>
+
+                        <div class="bg-options">
+                            <button class="toggle-pill ${bgIncludeRu ? 'on' : ''}" onclick="toggleBgRu(this)">
+                                🇷🇺 Перевод вслух: ${bgIncludeRu ? 'ВКЛ' : 'ВЫКЛ'}
+                            </button>
+                            <button class="toggle-pill ${bgAutoNext ? 'on' : ''}" onclick="toggleBgLoop(this)">
+                                🔁 Автопереход: ${bgAutoNext ? 'ВКЛ' : 'ВЫКЛ'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function speakCurrentQuestion() {
+            const item = shuffledDeck[currentIndex];
+            if (currentMode === 'en-ru') speakText(item.en, 'en');
+            else if (currentMode === 'ru-en') speakText(item.ru, 'ru');
+        }
+
+        function handleQuizAnswer(btn, isCorrect) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const item = shuffledDeck[currentIndex];
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                score += 10 + streak * 2;
+                streak++;
+                playTone('success');
+                trigger3DEffect('success');
+                showFeedback('Отлично! Правильный ответ ✨', true);
+            } else {
+                btn.classList.add('wrong');
+                streak = 0;
+                playTone('error');
+                trigger3DEffect('error');
+                const correctText = currentMode === 'en-ru' ? item.ru : item.en;
+                buttons.forEach(b => {
+                    if (b.textContent.includes(correctText)) b.classList.add('correct');
+                });
+                showFeedback(`Правильно: ${correctText}`, false);
+            }
+
+            updateStats();
+
+            // Озвучиваем перевод для закрепления
+            setTimeout(() => {
+                if (currentMode === 'en-ru') speakText(item.ru, 'ru');
+                else speakText(item.en, 'en');
+            }, 400);
+
+            setTimeout(() => {
+                nextQuestion();
+            }, 2400);
+        }
+
+        // Логика Конструктора
+        function pickWord(idx, word) {
+            if (isAnswered) return;
+            const chip = document.getElementById(`chip-${idx}`);
+            chip.classList.add('used');
+            selectedWords.push({ idx, word });
+            renderAnswerZone();
+        }
+
+        function removeWord(pos) {
+            if (isAnswered) return;
+            const removed = selectedWords.splice(pos, 1)[0];
+            document.getElementById(`chip-${removed.idx}`).classList.remove('used');
+            renderAnswerZone();
+        }
+
+        function renderAnswerZone() {
+            const zone = document.getElementById('answer-zone');
+            if (selectedWords.length === 0) {
+                zone.innerHTML = `<span style="color:#64748b; font-size:0.85rem;">Нажимайте на слова ниже...</span>`;
+                return;
+            }
+            zone.innerHTML = selectedWords.map((item, pos) => `
+                <button class="word-chip" style="border-color: var(--accent);" onclick="removeWord(${pos})">
+                    ${item.word}
+                </button>
+            `).join('');
+        }
+
+        function checkBuilderAnswer() {
+            if (isAnswered || selectedWords.length === 0) return;
+            const item = shuffledDeck[currentIndex];
+            const userSentence = selectedWords.map(w => w.word).join(' ');
+
+            isAnswered = true;
+            if (userSentence === item.en) {
+                score += 15 + streak * 2;
+                streak++;
+                playTone('success');
+                trigger3DEffect('success');
+                showFeedback('Супер! Предложение собрано идеально 🎉', true);
+            } else {
+                streak = 0;
+                playTone('error');
+                trigger3DEffect('error');
+                showFeedback(`Правильный вариант: ${item.en}`, false);
+            }
+
+            updateStats();
+            speakText(item.en, 'en');
+
+            setTimeout(() => {
+                nextQuestion();
+            }, 2700);
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex >= shuffledDeck.length) {
+                currentIndex = 0;
+                shuffledDeck = shuffleArray(lessonData);
+            }
+            renderQuestion();
+        }
+
+        // ==========================================
+        // 5. ФОНОВЫЙ АУДИО-ПЛЕЕР
+        // ==========================================
+        function toggleBackgroundAudio() {
+            if (bgPlaying) {
+                stopBackgroundAudio();
+            } else {
+                bgPlaying = true;
+                updatePlayButton();
+                runBackgroundSequence();
+            }
+        }
+
+        function stopBackgroundAudio() {
+            bgPlaying = false;
+            clearTimeout(bgTimer);
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            updatePlayButton();
+        }
+
+        function updatePlayButton() {
+            const btn = document.getElementById('bg-play-btn');
+            if (btn) btn.textContent = bgPlaying ? '⏸' : '▶';
+        }
+
+        function runBackgroundSequence() {
+            if (!bgPlaying || currentMode !== 'background') return;
+            const item = shuffledDeck[currentIndex];
+            trigger3DEffect('neutral');
+
+            speakText(item.en, 'en', () => {
+                if (!bgPlaying) return;
+                if (bgIncludeRu) {
+                    bgTimer = setTimeout(() => {
+                        if (!bgPlaying) return;
+                        speakText(item.ru, 'ru', () => {
+                            if (!bgPlaying) return;
+                            scheduleNextBgItem();
+                        });
+                    }, 600);
+                } else {
+                    scheduleNextBgItem();
+                }
+            });
+        }
+
+        function scheduleNextBgItem() {
+            if (!bgAutoNext) {
+                stopBackgroundAudio();
+                return;
+            }
+            bgTimer = setTimeout(() => {
+                if (!bgPlaying) return;
+                currentIndex = (currentIndex + 1) % shuffledDeck.length;
+                renderQuestion();
+                runBackgroundSequence();
+            }, 1100);
+        }
+
+        function bgNext() {
+            clearTimeout(bgTimer);
+            currentIndex = (currentIndex + 1) % shuffledDeck.length;
+            renderQuestion();
+            if (bgPlaying) runBackgroundSequence();
+        }
+
+        function bgPrev() {
+            clearTimeout(bgTimer);
+            currentIndex = (currentIndex - 1 + shuffledDeck.length) % shuffledDeck.length;
+            renderQuestion();
+            if (bgPlaying) runBackgroundSequence();
+        }
+
+        function toggleBgRu(el) {
+            bgIncludeRu = !bgIncludeRu;
+            el.classList.toggle('on', bgIncludeRu);
+            el.textContent = `🇷🇺 Перевод вслух: ${bgIncludeRu ? 'ВКЛ' : 'ВЫКЛ'}`;
+        }
+
+        function toggleBgLoop(el) {
+            bgAutoNext = !bgAutoNext;
+            el.classList.toggle('on', bgAutoNext);
+            el.textContent = `🔁 Автопереход: ${bgAutoNext ? 'ВКЛ' : 'ВЫКЛ'}`;
+        }
+
+        // Запуск игры
+        renderQuestion();
+    </script>
+</body>
+</html>
